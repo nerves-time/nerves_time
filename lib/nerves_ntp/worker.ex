@@ -34,7 +34,7 @@ defmodule Nerves.Ntp.Worker do
   end
 
   def handle_info({_, {:data, {:eol, data}}}, port) do
-    Logger.debug "Received data from port #{data}"
+    # Logger.debug "Received data from port #{data}" // turned off
     parse_ntp_output data
     {:noreply, port}
   end
@@ -77,9 +77,9 @@ defmodule Nerves.Ntp.Worker do
     parse_ntp_reply captures
   end
 
-  def parse_ntp_output(data) do
-    Logger.debug data
-  end
+  # def parse_ntp_output(data) do
+  #   Logger.debug data
+  # end
 
   def parse_ntp_reply(%{"offset" => offset, "server" => server}) do
     Logger.debug("Got reply form server #{server}, time offset is: #{offset}")
