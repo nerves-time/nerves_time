@@ -72,7 +72,7 @@ defmodule Nerves.Ntp.Worker do
 
   
   def parse_ntp_output("ntpd: reply " <> data) do
-    regex = ~r/from (?<server>(?:[0-9]{1,3}\.){3}[0-9]{1,3}).*delay:(?<delay>\d\.\d{6})/
+    regex = ~r/from (?<server>(?:[0-9]{1,3}\.){3}[0-9]{1,3}).*offset:[+-](?<offset>\d+\.\d{6})/
     captures = Regex.named_captures(regex, data)
     parse_ntp_reply captures
   end
@@ -81,8 +81,8 @@ defmodule Nerves.Ntp.Worker do
     Logger.debug data
   end
 
-  def parse_ntp_reply(%{"delay" => delay, "server" => server}) do
-    Logger.debug("Got reply form server #{server}, time offset is: #{delay}")
+  def parse_ntp_reply(%{"offset" => offset, "server" => server}) do
+    Logger.debug("Got reply form server #{server}, time offset is: #{offset}")
   end
 
 
