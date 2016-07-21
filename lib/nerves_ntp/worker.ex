@@ -77,9 +77,10 @@ defmodule Nerves.Ntp.Worker do
     parse_ntp_reply captures
   end
 
-  # def parse_ntp_output(data) do
-  #   Logger.debug data
-  # end
+  def parse_ntp_output(_data) do
+    # Logger.debug data
+    :ok
+  end
 
   def parse_ntp_reply(%{"offset" => offset, "server" => server}) do
     Logger.debug("Got reply form server #{server}, time offset is: #{offset}")
