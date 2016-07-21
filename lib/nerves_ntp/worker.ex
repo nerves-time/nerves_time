@@ -14,7 +14,7 @@ defmodule Nerves.Ntp.Worker do
   def init(args) do
     Logger.debug "Binary to use: #{@ntpd}"
     Logger.debug "Configured servers are: #{inspect @servers}"
-    Logger.debug ~s(Command to run: "#{ntp_cmd}")
+    Logger.debug ~s(Command to run: "#{ntp_cmd}")    
     ntpd = Port.open({:spawn, ntp_cmd}, [
         :exit_status,
         :use_stdio,
@@ -23,27 +23,14 @@ defmodule Nerves.Ntp.Worker do
         :stderr_to_stdout
       ])
     {:ok, ntpd}
-    # {:ok, {}}
   end
-
-  # def terminate(reason, state) do
-  #   case Port.info(state) do
-  #      nil -> nil
-  #      a -> Logger.error(a)
-  #   end    
-  # end
 
   def handle_info({_, {:exit_status, code}}, state) do
     Logger.debug "ntpd exited with code: #{code}"
-    with 1 <- code do
-      # ntp exited so we will try to restart it after 2 sek
-      # Port.close(state) // not required... as port is already closed
-      Process.sleep(2_000)
-      {:stop, :ntp_die, nil}
-    else
-      _ ->
-        {:noreply, state}
-    end
+    # ntp exited so we will try to restart it after 10 sek
+    # Port.close(state) // not required... as port is already closed
+    Process.sleep(10_000)
+    {:stop, :shutdown, nil}
   end
 
   def handle_info({_, {:data, {:eol, data}}}, port) do
@@ -102,15 +89,6 @@ defmodule Nerves.Ntp.Worker do
   def parse_ntp_reply(%{"delay" => delay, "server" => server}) do
     Logger.debug("Got reply form server #{server}, time offset is: #{delay}")
   end
-
-  # def parse_ntp_output(data) when is_binary(data) do
-  #   # Logger.error inspect(data)
-  #   data
-  #     |> :binary.split(<<"\n">>)
-  #     # |> IO.puts
-  #     # |> Logger.error
-  #     |> Enum.map(&(parse_ntp_output(&1)))
-  # end
 
 
 end
