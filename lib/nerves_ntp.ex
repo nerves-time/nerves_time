@@ -2,9 +2,9 @@ defmodule Nerves.Ntp do
   use Application
   require Logger
 
-  def start(_type, _args) do
+  def start(type, _args) do
     import Supervisor.Spec
-    Logger.debug "Starting app in #{_type} mode"
+    Logger.debug "Starting app in #{type} mode"
     # ntp_server = Application.get_env(:ntp, :wlan0)
     # Nerves.InterimWiFi.setup "wlan0", wifi_opts
 

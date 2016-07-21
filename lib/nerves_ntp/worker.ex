@@ -11,7 +11,7 @@ defmodule Nerves.Ntp.Worker do
     GenServer.start_link(__MODULE__, :ok)
   end
 
-  def init(args) do
+  def init(_args) do
     Logger.debug "Binary to use: #{@ntpd}"
     Logger.debug "Configured servers are: #{inspect @servers}"
     Logger.debug ~s(Command to run: "#{ntp_cmd}")    
@@ -25,7 +25,7 @@ defmodule Nerves.Ntp.Worker do
     {:ok, ntpd}
   end
 
-  def handle_info({_, {:exit_status, code}}, state) do
+  def handle_info({_, {:exit_status, code}}, _state) do
     Logger.debug "ntpd exited with code: #{code}"
     # ntp exited so we will try to restart it after 10 sek
     # Port.close(state) // not required... as port is already closed
@@ -50,12 +50,7 @@ defmodule Nerves.Ntp.Worker do
     Logger.debug "start"
 
     {:reply, :ok, state}
-  end
-
-  def handle_call(request, _from, state) do
-    Logger.debug "#{inspect state}"
-    {:reply, :ok, state}
-  end
+  end 
 
 
   defp ntp_cmd do
