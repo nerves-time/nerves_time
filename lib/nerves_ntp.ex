@@ -5,8 +5,6 @@ defmodule Nerves.Ntp do
   def start(type, _args) do
     import Supervisor.Spec
     Logger.debug "Starting app in #{type} mode"
-    # ntp_server = Application.get_env(:ntp, :wlan0)
-    # Nerves.InterimWiFi.setup "wlan0", wifi_opts
 
     # Define workers and child supervisors to be supervised
     children = [
@@ -17,9 +15,5 @@ defmodule Nerves.Ntp do
     opts = [strategy: :one_for_one, name: Nerves.Ntp.Worker]
     Supervisor.start_link(children, opts)    
   end
-
-  # def start do
-  #   GenServer.call(Nerves.Ntp.Worker, :start)
-  # end
 
 end
