@@ -14,7 +14,7 @@ defmodule Nerves.Ntp.Worker do
   def init(_args) do
     Logger.debug "Binary to use: #{@ntpd}"
     Logger.debug "Configured servers are: #{inspect @servers}"
-    Logger.debug ~s(Command to run: "#{ntp_cmd}")    
+    Logger.debug ~s(Command to run: "#{ntp_cmd}")
     ntpd = Port.open({:spawn, ntp_cmd}, [
         :exit_status,
         :use_stdio,
@@ -50,7 +50,7 @@ defmodule Nerves.Ntp.Worker do
     Logger.debug "start"
 
     {:reply, :ok, state}
-  end 
+  end
 
 
   defp ntp_cmd do
@@ -70,7 +70,7 @@ defmodule Nerves.Ntp.Worker do
     cmd
   end
 
-  
+
   def parse_ntp_output("ntpd: reply " <> data) do
     regex = ~r/from (?<server>(?:[0-9]{1,3}\.){3}[0-9]{1,3}).*offset:[+-](?<offset>\d+\.\d{6})/
     captures = Regex.named_captures(regex, data)
@@ -84,6 +84,10 @@ defmodule Nerves.Ntp.Worker do
 
   def parse_ntp_reply(%{"offset" => offset, "server" => server}) do
     Logger.debug("Got reply form server #{server}, time offset is: #{offset}")
+  end
+
+  def parse_ntp_reply(nil) do
+    Logger.debug("Output not understood, ignoring message")
   end
 
 
