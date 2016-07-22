@@ -1,10 +1,28 @@
 # NervesNtp
 
-**TODO: Add description**
+NervesNtp is simple OTP application which synchronizes time using busybox `ntpd` command. Primary use is for [Nerves](http://nerves-project.org) embedded devices without RTC.
+
+There are two configuration options:
+
+```elixir
+# config/config.exs
+use Mix.Config
+
+# ntpd binary to use
+config :nerves_ntp, :ntpd, "/usr/sbin/ntpd"
+ 
+# servers to sync time from
+config :nerves_ntpd, :servers, [
+    "0.pool.ntp.org",
+    "1.pool.ntp.org", 
+    "2.pool.ntp.org", 
+    "3.pool.ntp.org"
+  ]
+```
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed as:
+The package can be installed as:
 
   1. Add `nerves_ntp` to your list of dependencies in `mix.exs`:
 
