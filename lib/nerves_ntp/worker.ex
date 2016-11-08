@@ -29,14 +29,18 @@ defmodule Nerves.Ntp.Worker do
     Logger.debug "ntpd exited with code: #{code}"
     # ntp exited so we will try to restart it after 10 sek
     # Port.close(state) // not required... as port is already closed
-    Process.sleep(10_000)
-    {:stop, :shutdown, nil}
+    pause_and_die
   end
 
   def handle_info({_, {:data, {:eol, data}}}, port) do
-    # Logger.debug "Received data from port #{data}" // turned off
-    parse_ntp_output data
-    {:noreply, port}
+    # Logger.debug "Received data from port #{data}"
+    case parse_ntp_output data do
+      :ok -> 
+        {:noreply, port}
+      :error -> 
+        Port.close(port)
+        pause_and_die
+    end
   end
 
   def handle_info(msg, state) do
@@ -45,31 +49,29 @@ defmodule Nerves.Ntp.Worker do
     {:noreply, state}
   end
 
-
   def handle_call(:start, _from, state) do
     Logger.debug "start"
 
     {:reply, :ok, state}
   end
 
+  defp pause_and_die do
+    Process.sleep(10_000)
+    {:stop, :shutdown, nil}
+  end
 
   defp ntp_cmd do
     "#{@ntpd} -n -d"
-      |> add_servers
+    |> add_servers
   end
 
-  def add_servers(cmd) do
-    add_servers(cmd, @servers)
-  end
+  def add_servers(cmd), do: add_servers(cmd, @servers)
+  def add_servers(cmd, [h | t]), do: add_servers cmd <> " -p #{h}", t
+  def add_servers(cmd, []), do: cmd
 
-  def add_servers(cmd, [h | t]) do
-    add_servers cmd <> " -p #{h}", t
+  def parse_ntp_output("ntpd: bad address " <> _address) do
+    :error
   end
-
-  def add_servers(cmd, []) do
-    cmd
-  end
-
 
   def parse_ntp_output("ntpd: reply " <> data) do
     regex = ~r/from (?<server>(?:[0-9]{1,3}\.){3}[0-9]{1,3}).*offset:[+-](?<offset>\d+\.\d{6})/
@@ -84,11 +86,12 @@ defmodule Nerves.Ntp.Worker do
 
   def parse_ntp_reply(%{"offset" => offset, "server" => server}) do
     Logger.debug("Got reply form server #{server}, time offset is: #{offset}")
+    :ok
   end
 
   def parse_ntp_reply(nil) do
     Logger.debug("Output not understood, ignoring message")
+    :ok
   end
-
 
 end
