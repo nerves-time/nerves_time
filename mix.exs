@@ -6,14 +6,13 @@ defmodule Nerves.Ntp.Mixfile do
       app: :nerves_ntp,
       version: "0.1.1",
       elixir: "~> 1.3",
-      build_embedded: Mix.env == :prod,
-      start_permanent: Mix.env == :prod,
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
       package: package()
     ]
   end
-
 
   # Configuration for the OTP application
   #
@@ -52,8 +51,6 @@ defmodule Nerves.Ntp.Mixfile do
   #
   # Type "mix help deps" for more examples and options
   defp deps do
-    [
-
-    ]
+    []
   end
 end

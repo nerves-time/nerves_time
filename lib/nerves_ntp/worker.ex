@@ -3,30 +3,37 @@ defmodule Nerves.Ntp.Worker do
   require Logger
 
   @ntpd Application.get_env(:nerves_ntp, :ntpd, "/usr/sbin/ntpd")
-  @servers Application.get_env(:nerves_ntp, :servers, ["0.pool.ntp.org", "1.pool.ntp.org", "2.pool.ntp.org", "3.pool.ntp.org"])
-
+  @servers Application.get_env(:nerves_ntp, :servers, [
+             "0.pool.ntp.org",
+             "1.pool.ntp.org",
+             "2.pool.ntp.org",
+             "3.pool.ntp.org"
+           ])
 
   def start_link do
-    Logger.debug "Starting Worker"
+    Logger.debug("Starting Worker")
     GenServer.start_link(__MODULE__, :ok)
   end
 
   def init(_args) do
-    Logger.debug "Binary to use: #{@ntpd}"
-    Logger.debug "Configured servers are: #{inspect @servers}"
-    Logger.debug ~s(Command to run: "#{ntp_cmd}")
-    ntpd = Port.open({:spawn, ntp_cmd}, [
+    Logger.debug("Binary to use: #{@ntpd}")
+    Logger.debug("Configured servers are: #{inspect(@servers)}")
+    Logger.debug(~s(Command to run: "#{ntp_cmd}"))
+
+    ntpd =
+      Port.open({:spawn, ntp_cmd}, [
         :exit_status,
         :use_stdio,
         :binary,
         {:line, 2048},
         :stderr_to_stdout
       ])
+
     {:ok, ntpd}
   end
 
   def handle_info({_, {:exit_status, code}}, _state) do
-    Logger.debug "ntpd exited with code: #{code}"
+    Logger.debug("ntpd exited with code: #{code}")
     # ntp exited so we will try to restart it after 10 sek
     # Port.close(state) // not required... as port is already closed
     pause_and_die
@@ -34,23 +41,24 @@ defmodule Nerves.Ntp.Worker do
 
   def handle_info({_, {:data, {:eol, data}}}, port) do
     # Logger.debug "Received data from port #{data}"
-    case parse_ntp_output data do
-      :ok -> 
+    case parse_ntp_output(data) do
+      :ok ->
         {:noreply, port}
-      :error -> 
+
+      :error ->
         Port.close(port)
         pause_and_die
     end
   end
 
   def handle_info(msg, state) do
-    Logger.debug "#{inspect msg}"
-    Logger.debug "#{inspect state}"
+    Logger.debug("#{inspect(msg)}")
+    Logger.debug("#{inspect(state)}")
     {:noreply, state}
   end
 
   def handle_call(:start, _from, state) do
-    Logger.debug "start"
+    Logger.debug("start")
 
     {:reply, :ok, state}
   end
@@ -66,7 +74,7 @@ defmodule Nerves.Ntp.Worker do
   end
 
   def add_servers(cmd), do: add_servers(cmd, @servers)
-  def add_servers(cmd, [h | t]), do: add_servers cmd <> " -p #{h}", t
+  def add_servers(cmd, [h | t]), do: add_servers(cmd <> " -p #{h}", t)
   def add_servers(cmd, []), do: cmd
 
   def parse_ntp_output("ntpd: bad address " <> _address) do
@@ -76,7 +84,7 @@ defmodule Nerves.Ntp.Worker do
   def parse_ntp_output("ntpd: reply " <> data) do
     regex = ~r/from (?<server>(?:[0-9]{1,3}\.){3}[0-9]{1,3}).*offset:[+-](?<offset>\d+\.\d{6})/
     captures = Regex.named_captures(regex, data)
-    parse_ntp_reply captures
+    parse_ntp_reply(captures)
   end
 
   def parse_ntp_output(_data) do
@@ -93,5 +101,4 @@ defmodule Nerves.Ntp.Worker do
     Logger.debug("Output not understood, ignoring message")
     :ok
   end
-
 end
