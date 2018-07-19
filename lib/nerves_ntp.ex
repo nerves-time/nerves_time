@@ -1,4 +1,4 @@
-defmodule Nerves.Ntp do
+defmodule Nerves.NTP do
   use Application
   require Logger
 
@@ -6,14 +6,11 @@ defmodule Nerves.Ntp do
     import Supervisor.Spec
     Logger.debug("Starting app in #{type} mode")
 
-    # Define workers and child supervisors to be supervised
     children = [
-      worker(Nerves.Ntp.Worker, [])
+      worker(Nerves.NTP.Worker, [])
     ]
 
-    # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
-    # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: Nerves.Ntp.Worker]
+    opts = [strategy: :one_for_one, name: Nerves.NTP.Worker]
     Supervisor.start_link(children, opts)
   end
 end

@@ -1,4 +1,4 @@
-defmodule Nerves.Ntp.Worker do
+defmodule Nerves.NTP.Worker do
   use GenServer
   require Logger
 
