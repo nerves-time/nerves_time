@@ -20,14 +20,15 @@ defmodule Nerves.NTP.Worker do
     Logger.debug("Configured servers are: #{inspect(@servers)}")
     Logger.debug(~s(Command to run: "#{ntp_cmd()}"))
 
-    ntpd =
-      Port.open({:spawn, ntp_cmd()}, [
-        :exit_status,
-        :use_stdio,
-        :binary,
-        {:line, 2048},
-        :stderr_to_stdout
-      ])
+    ntpd = nil
+    # ntpd =
+    #   Port.open({:spawn, ntp_cmd()}, [
+    #     :exit_status,
+    #     :use_stdio,
+    #     :binary,
+    #     {:line, 2048},
+    #     :stderr_to_stdout
+    #   ])
 
     {:ok, ntpd}
   end
