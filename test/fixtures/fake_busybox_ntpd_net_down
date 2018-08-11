@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# This script simulates what Busybox ntpd prints out when the network is down
+
+while true; do
+    cat <<EOF
+ntpd: bad address '0.pool.ntp.org'
+ntpd: bad address '1.pool.ntp.org'
+EOF
+    sleep 1
+done
+

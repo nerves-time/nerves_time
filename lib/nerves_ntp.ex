@@ -6,7 +6,5 @@ defmodule Nerves.NTP do
   @doc """
 
   """
-  def is_synchronized?() do
-    false
-  end
+  defdelegate is_synchronized, to: Nerves.NTP.Worker
 end

@@ -11,14 +11,50 @@ defmodule Nerves.NTP.Worker do
     "3.pool.ntp.org"
   ]
 
+  defmodule State do
+    @moduledoc false
+    defstruct port: nil,
+              synchronized: false
+  end
+
   @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(_args) do
     Logger.debug("Starting Worker")
-    GenServer.start_link(__MODULE__, :ok)
+    GenServer.start_link(__MODULE__, [])
+  end
+
+  @spec is_synchronized() :: true | false
+  def is_synchronized() do
+    GenServer.call(__MODULE__, :is_synchronized)
   end
 
   @spec init(any()) :: {:ok, any()}
   def init(_args) do
+    state = %State{port: run_ntpd()}
+    {:ok, state}
+  end
+
+  def handle_call(:is_synchronized, _from, state) do
+    {:reply, state.synchronized, state}
+  end
+
+  def handle_info({_, {:exit_status, code}}, state) do
+    Logger.error("ntpd exited with code: #{code}!")
+    {:stop, :ntpd_died, state}
+  end
+
+  def handle_info({_, {:data, {:eol, message}}}, state) do
+    OutputParser.parse(message)
+    |> handle_ntpd(state)
+  end
+
+  def handle_info(msg, state) do
+    Logger.debug("#{inspect(msg)}")
+    Logger.debug("#{inspect(state)}")
+    {:noreply, state}
+  end
+
+  defp run_ntpd() do
     ntpd_path = Application.get_env(:nerves_ntp, :ntpd, @default_ntpd_path)
     servers = Application.get_env(:nerves_ntp, :servers, @default_ntp_servers)
     set_time = Application.get_env(:nerves_ntp, :set_time, true)
@@ -32,43 +68,15 @@ defmodule Nerves.NTP.Worker do
 
     # Call ntpd using muontrap. Muontrap will kill ntpd if this GenServer
     # crashes.
-    ntpd =
-      Port.open({:spawn_executable, MuonTrap.muontrap_path()}, [
-        {:args, ["--" | args]},
-        :exit_status,
-        :use_stdio,
-        :binary,
-        {:line, 2048},
-        :stderr_to_stdout
-      ])
 
-    {:ok, ntpd}
-  end
-
-  def handle_info({_, {:exit_status, code}}, _state) do
-    Logger.error("ntpd exited with code: #{code}")
-    # ntp exited so we will try to restart it after 10 sek
-    # Port.close(state) // not required... as port is already closed
-    pause_and_die()
-  end
-
-  def handle_info({_, {:data, {:eol, message}}}, port) do
-    # Logger.debug "Received data from port #{message}"
-    result = OutputParser.parse(message)
-    IO.inspect(result)
-
-    {:noreply, port}
-  end
-
-  def handle_info(msg, state) do
-    Logger.debug("#{inspect(msg)}")
-    Logger.debug("#{inspect(state)}")
-    {:noreply, state}
-  end
-
-  defp pause_and_die do
-    Process.sleep(10_000)
-    {:stop, :shutdown, nil}
+    Port.open({:spawn_executable, MuonTrap.muontrap_path()}, [
+      {:args, ["--" | args]},
+      :exit_status,
+      :use_stdio,
+      :binary,
+      {:line, 2048},
+      :stderr_to_stdout
+    ])
   end
 
   defp server_args(servers) do
@@ -77,4 +85,34 @@ defmodule Nerves.NTP.Worker do
 
   defp set_time_args(true), do: []
   defp set_time_args(false), do: ["-w"]
+
+  defp handle_ntpd({report, result}, state) when report in [:stratum, :periodic] do
+    synchronized = maybe_update_clock(result)
+
+    {:noreply, %{state | synchronized: synchronized}}
+  end
+
+  defp handle_ntpd({:unsync, _result}, state) do
+    Logger.error("ntpd reports that it is unsynchronized; relaunching")
+
+    # According to the Busybox ntpd docs, if you get an `unsync` notification, then
+    # you should restart ntpd to be safe. This is stated to be due to name resolution
+    # only being done at initialization.
+    Port.close(state.port)
+
+    new_state = %{state | port: run_ntpd(), synchronized: false}
+    {:noreply, new_state}
+  end
+
+  defp handle_ntpd(_, port) do
+    {:noreply, port}
+  end
+
+  defp maybe_update_clock(%{stratum: stratum, poll_interval: poll_interval})
+       when stratum <= 4 and poll_interval >= 128 do
+    Nerves.NTP.FileTime.update()
+    true
+  end
+
+  defp maybe_update_clock(_result), do: false
 end

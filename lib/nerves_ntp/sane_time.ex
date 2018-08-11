@@ -1,6 +1,23 @@
 defmodule Nerves.NTP.SaneTime do
-  @build_time DateTime.utc_now() |> DateTime.truncate(:second)
+  @build_time NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
   @newest_time %{@build_time | year: @build_time.year + 20}
+
+  @doc """
+  Figure out a guess of the real time based on the current system clock (possible_time)
+  and the latest timestamp from FileTime.
+  """
+  def derive_time(possible_time, file_time) do
+    # First normalize the input times so that they're in a reasonable time interval
+    sane_file_time = make_sane(file_time)
+    sane_possible_time = make_sane(possible_time)
+
+    # Pick the latest
+    if NaiveDateTime.compare(sane_possible_time, sane_file_time) == :gt do
+      sane_possible_time
+    else
+      sane_file_time
+    end
+  end
 
   @doc """
   This function takes a guess at the current time and tries to adjust it so
@@ -13,12 +30,18 @@ defmodule Nerves.NTP.SaneTime do
 
   Currently if the time doesn't look right, it's set to the build time.
   """
-  def make_sane(possible_time) do
-    if DateTime.compare(possible_time, @build_time) == :lt or
-         DateTime.compare(possible_time, @newest_time) == :gt do
+  def make_sane(time) do
+    if not is_sane(time) do
       @build_time
     else
-      possible_time
+      time
     end
   end
+
+  defp is_sane(%NaiveDateTime{} = time) do
+    NaiveDateTime.compare(time, @build_time) == :gt and
+      NaiveDateTime.compare(time, @newest_time) == :lt
+  end
+
+  defp is_sane(_something_else), do: false
 end
