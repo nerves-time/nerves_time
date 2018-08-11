@@ -3,8 +3,8 @@ defmodule Nerves.NTP.SaneTime do
   @newest_time %{@build_time | year: @build_time.year + 20}
 
   @doc """
-  This function takes a guess at the current time and tries to
-  adjust it so that it's not obviously wrong.
+  This function takes a guess at the current time and tries to adjust it so
+  that it's not obviously wrong.
 
   Some things that could be wrong:
 

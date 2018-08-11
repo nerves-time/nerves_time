@@ -44,8 +44,7 @@ defmodule OutputParserTest do
   end
 
   test "decodes ntpscript stratum report" do
-    {:stratum, result} =
-      OutputParser.parse("ntpd_script: stratum,0,0.190975,3,1")
+    {:stratum, result} = OutputParser.parse("ntpd_script: stratum,0,0.190975,3,1")
 
     assert result.freq_drift_ppm == 0
     assert result.offset == 0.190975
@@ -54,8 +53,7 @@ defmodule OutputParserTest do
   end
 
   test "decodes ntpscript unsync report" do
-    {:unsync, result} =
-      OutputParser.parse("ntpd_script: unsync,-303,0.0000,16,64")
+    {:unsync, result} = OutputParser.parse("ntpd_script: unsync,-303,0.0000,16,64")
 
     assert result.freq_drift_ppm == -303
     assert result.offset == 0
@@ -64,8 +62,7 @@ defmodule OutputParserTest do
   end
 
   test "decodes ntpscript step report" do
-    {:step, result} =
-      OutputParser.parse("ntpd_script: step,0,0.190975,3,1")
+    {:step, result} = OutputParser.parse("ntpd_script: step,0,0.190975,3,1")
 
     assert result.freq_drift_ppm == 0
     assert result.offset == 0.190975
@@ -74,8 +71,7 @@ defmodule OutputParserTest do
   end
 
   test "decodes ntpscript periodic report" do
-    {:periodic, result} =
-      OutputParser.parse("ntpd_script: periodic,-257,0.163099,3,32")
+    {:periodic, result} = OutputParser.parse("ntpd_script: periodic,-257,0.163099,3,32")
 
     assert result.freq_drift_ppm == -257
     assert result.offset == 0.163099
@@ -83,8 +79,7 @@ defmodule OutputParserTest do
     assert result.poll_interval == 32
 
     # Network totally down
-    {:periodic, result} =
-      OutputParser.parse("ntpd_script: periodic,0,0.000000,16,1")
+    {:periodic, result} = OutputParser.parse("ntpd_script: periodic,0,0.000000,16,1")
     assert result.freq_drift_ppm == 0
     assert result.offset == 0
     assert result.stratum == 16
@@ -95,6 +90,8 @@ defmodule OutputParserTest do
     assert OutputParser.parse("\n") == {:ignored, "\n"}
     assert OutputParser.parse("something") == {:ignored, "something"}
     assert OutputParser.parse("ntpd: new stuff") == {:ignored, "ntpd: new stuff"}
-    assert OutputParser.parse("ntpd: executing './priv/ntpd_script stratum'") == {:ignored, "ntpd: executing './priv/ntpd_script stratum'"}
+
+    assert OutputParser.parse("ntpd: executing './priv/ntpd_script stratum'") ==
+             {:ignored, "ntpd: executing './priv/ntpd_script stratum'"}
   end
 end

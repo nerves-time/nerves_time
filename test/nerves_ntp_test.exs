@@ -10,6 +10,6 @@ defmodule NervesNTPTest do
 
   test "reports that time synchronized when told" do
     Application.put_env(:nerves_ntp, :ntpd, Path.join(@fixtures, "fake_busybox_ntpd"))
-    #Application.start(:nerves_ntp)
+    # Application.start(:nerves_ntp)
   end
 end

@@ -32,7 +32,16 @@ defmodule Nerves.NTP.MixProject do
 
   defp package do
     [
-      files: ["lib", "src/*.[ch]", "test", "mix.exs", "README.md", "LICENSE", "CHANGELOG.md", "Makefile"],
+      files: [
+        "lib",
+        "src/*.[ch]",
+        "test",
+        "mix.exs",
+        "README.md",
+        "LICENSE",
+        "CHANGELOG.md",
+        "Makefile"
+      ],
       maintainers: ["Marcin Operacz", "Wojciech Mandrysz"],
       licenses: ["Apache-2.0"],
       links: %{"GitHub" => "https://github.com/evokly/nerves_ntp"}

@@ -24,7 +24,9 @@ defmodule Nerves.NTP.Worker do
     set_time = Application.get_env(:nerves_ntp, :set_time, true)
     ntpd_script_path = Application.app_dir(:nerves_ntp, "priv/ntpd_script")
 
-    args = [ntpd_path, "-n", "-d", "-S", ntpd_script_path] ++ server_args(servers) ++ set_time_args(set_time)
+    args =
+      [ntpd_path, "-n", "-d", "-S", ntpd_script_path] ++
+        server_args(servers) ++ set_time_args(set_time)
 
     Logger.debug("Running ntp as: #{inspect(args)}")
 
