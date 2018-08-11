@@ -9,7 +9,9 @@ First add `nerves_ntp` to your project's dependencies:
 
 ```elixir
 def deps do
-  [{:nerves_ntp, "~> 0.1.0"}]
+  [
+    {:nerves_ntp, "~> 0.1.0"}
+  ]
 end
 ```
 

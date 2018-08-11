@@ -1,5 +1,6 @@
 defmodule Nerves.NTP.Worker do
   use GenServer
+  alias Nerves.NTP.OutputParser
   require Logger
 
   @ntpd Application.get_env(:nerves_ntp, :ntpd, "/usr/sbin/ntpd")
@@ -10,11 +11,13 @@ defmodule Nerves.NTP.Worker do
              "3.pool.ntp.org"
            ])
 
-  def start_link do
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
+  def start_link(_args) do
     Logger.debug("Starting Worker")
     GenServer.start_link(__MODULE__, :ok)
   end
 
+  @spec init(any()) :: {:ok, any()}
   def init(_args) do
     Logger.debug("Binary to use: #{@ntpd}")
     Logger.debug("Configured servers are: #{inspect(@servers)}")
@@ -40,16 +43,12 @@ defmodule Nerves.NTP.Worker do
     pause_and_die()
   end
 
-  def handle_info({_, {:data, {:eol, data}}}, port) do
-    # Logger.debug "Received data from port #{data}"
-    case parse_ntp_output(data) do
-      :ok ->
-        {:noreply, port}
+  def handle_info({_, {:data, {:eol, message}}}, port) do
+    # Logger.debug "Received data from port #{message}"
+    result = OutputParser.parse(message)
+    IO.inspect(result)
 
-      :error ->
-        Port.close(port)
-        pause_and_die()
-    end
+    {:noreply, port}
   end
 
   def handle_info(msg, state) do
@@ -74,32 +73,7 @@ defmodule Nerves.NTP.Worker do
     |> add_servers
   end
 
-  def add_servers(cmd), do: add_servers(cmd, @servers)
-  def add_servers(cmd, [h | t]), do: add_servers(cmd <> " -p #{h}", t)
-  def add_servers(cmd, []), do: cmd
-
-  def parse_ntp_output("ntpd: bad address " <> _address) do
-    :error
-  end
-
-  def parse_ntp_output("ntpd: reply " <> data) do
-    regex = ~r/from (?<server>(?:[0-9]{1,3}\.){3}[0-9]{1,3}).*offset:[+-](?<offset>\d+\.\d{6})/
-    captures = Regex.named_captures(regex, data)
-    parse_ntp_reply(captures)
-  end
-
-  def parse_ntp_output(_data) do
-    # Logger.debug data
-    :ok
-  end
-
-  def parse_ntp_reply(%{"offset" => offset, "server" => server}) do
-    Logger.debug("Got reply form server #{server}, time offset is: #{offset}")
-    :ok
-  end
-
-  def parse_ntp_reply(nil) do
-    Logger.debug("Output not understood, ignoring message")
-    :ok
-  end
+  defp add_servers(cmd), do: add_servers(cmd, @servers)
+  defp add_servers(cmd, [h | t]), do: add_servers(cmd <> " -p #{h}", t)
+  defp add_servers(cmd, []), do: cmd
 end

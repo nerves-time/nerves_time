@@ -4,9 +4,8 @@ defmodule Nerves.NTP.MixProject do
   def project do
     [
       app: :nerves_ntp,
-      version: "0.2.0",
+      version: "0.3.0",
       elixir: "~> 1.6",
-      build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
@@ -14,27 +13,22 @@ defmodule Nerves.NTP.MixProject do
     ]
   end
 
-  # Configuration for the OTP application
-  #
-  # Type "mix help compile.app" for more information
+  # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      applications: [:logger],
-      mod: {Nerves.NTP, []}
+      extra_applications: [:logger],
+      mod: {Nerves.NTP.Application, []}
     ]
   end
 
   defp description do
     """
-    OTP application to sync time using busybox `ntpd` command.
+    Synchronize system time using Busybox `ntpd`.
     """
   end
 
   defp package do
     [
-      # These are the default files included in the package
-      name: :nerves_ntp,
-      files: ["lib", "priv", "mix.exs", "README*", "readme*", "LICENSE*", "license*"],
       maintainers: ["Marcin Operacz", "Wojciech Mandrysz"],
       licenses: ["Apache 2.0"],
       links: %{"GitHub" => "https://github.com/evokly/nerves_ntp"}
