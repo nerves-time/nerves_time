@@ -37,7 +37,8 @@ defmodule Nerves.NTP.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.11", only: :dev}
+      {:muontrap, "~> 0.4"},
+      {:ex_doc, "~> 0.18.0", only: :dev}
     ]
   end
 end

@@ -3,6 +3,6 @@ defmodule NervesNTPTest do
   doctest Nerves.NTP
 
   test "greets the world" do
-    #assert Nerves.NTP.hello() == :world
+    # assert Nerves.NTP.hello() == :world
   end
 end

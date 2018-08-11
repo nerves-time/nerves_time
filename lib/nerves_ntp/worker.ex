@@ -3,14 +3,6 @@ defmodule Nerves.NTP.Worker do
   alias Nerves.NTP.OutputParser
   require Logger
 
-  @ntpd Application.get_env(:nerves_ntp, :ntpd, "/usr/sbin/ntpd")
-  @servers Application.get_env(:nerves_ntp, :servers, [
-             "0.pool.ntp.org",
-             "1.pool.ntp.org",
-             "2.pool.ntp.org",
-             "3.pool.ntp.org"
-           ])
-
   @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(_args) do
     Logger.debug("Starting Worker")
@@ -19,25 +11,27 @@ defmodule Nerves.NTP.Worker do
 
   @spec init(any()) :: {:ok, any()}
   def init(_args) do
-    Logger.debug("Binary to use: #{@ntpd}")
-    Logger.debug("Configured servers are: #{inspect(@servers)}")
-    Logger.debug(~s(Command to run: "#{ntp_cmd()}"))
+    ntpd_path = Application.get_env(:nerves_ntp, :ntpd, "/usr/sbin/ntpd")
+    args = [ntpd_path, "-n", "-d" | server_args()]
+    Logger.debug("Running ntp as: #{inspect(args)}")
 
-    ntpd = nil
-    # ntpd =
-    #   Port.open({:spawn, ntp_cmd()}, [
-    #     :exit_status,
-    #     :use_stdio,
-    #     :binary,
-    #     {:line, 2048},
-    #     :stderr_to_stdout
-    #   ])
+    # Call ntpd using muontrap. Muontrap will kill ntpd if this GenServer
+    # crashes.
+    ntpd =
+      Port.open({:spawn_executable, MuonTrap.muontrap_path()}, [
+        {:args, ["--" | args]},
+        :exit_status,
+        :use_stdio,
+        :binary,
+        {:line, 2048},
+        :stderr_to_stdout
+      ])
 
     {:ok, ntpd}
   end
 
   def handle_info({_, {:exit_status, code}}, _state) do
-    Logger.debug("ntpd exited with code: #{code}")
+    Logger.error("ntpd exited with code: #{code}")
     # ntp exited so we will try to restart it after 10 sek
     # Port.close(state) // not required... as port is already closed
     pause_and_die()
@@ -57,23 +51,18 @@ defmodule Nerves.NTP.Worker do
     {:noreply, state}
   end
 
-  def handle_call(:start, _from, state) do
-    Logger.debug("start")
-
-    {:reply, :ok, state}
-  end
-
   defp pause_and_die do
     Process.sleep(10_000)
     {:stop, :shutdown, nil}
   end
 
-  defp ntp_cmd do
-    "#{@ntpd} -n -d"
-    |> add_servers
+  defp server_args() do
+    Application.get_env(:nerves_ntp, :servers, [
+      "0.pool.ntp.org",
+      "1.pool.ntp.org",
+      "2.pool.ntp.org",
+      "3.pool.ntp.org"
+    ])
+    |> Enum.flat_map(fn s -> ["-p", s] end)
   end
-
-  defp add_servers(cmd), do: add_servers(cmd, @servers)
-  defp add_servers(cmd, [h | t]), do: add_servers(cmd <> " -p #{h}", t)
-  defp add_servers(cmd, []), do: cmd
 end
