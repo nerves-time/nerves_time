@@ -3,6 +3,14 @@ defmodule Nerves.NTP.Worker do
   alias Nerves.NTP.OutputParser
   require Logger
 
+  @default_ntpd_path "/usr/sbin/ntpd"
+  @default_ntp_servers [
+    "0.pool.ntp.org",
+    "1.pool.ntp.org",
+    "2.pool.ntp.org",
+    "3.pool.ntp.org"
+  ]
+
   @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(_args) do
     Logger.debug("Starting Worker")
@@ -11,8 +19,13 @@ defmodule Nerves.NTP.Worker do
 
   @spec init(any()) :: {:ok, any()}
   def init(_args) do
-    ntpd_path = Application.get_env(:nerves_ntp, :ntpd, "/usr/sbin/ntpd")
-    args = [ntpd_path, "-n", "-d" | server_args()]
+    ntpd_path = Application.get_env(:nerves_ntp, :ntpd, @default_ntpd_path)
+    servers = Application.get_env(:nerves_ntp, :servers, @default_ntp_servers)
+    set_time = Application.get_env(:nerves_ntp, :set_time, true)
+    ntpd_script_path = Application.app_dir(:nerves_ntp, "priv/ntpd_script")
+
+    args = [ntpd_path, "-n", "-d", "-S", ntpd_script_path] ++ server_args(servers) ++ set_time_args(set_time)
+
     Logger.debug("Running ntp as: #{inspect(args)}")
 
     # Call ntpd using muontrap. Muontrap will kill ntpd if this GenServer
@@ -56,13 +69,10 @@ defmodule Nerves.NTP.Worker do
     {:stop, :shutdown, nil}
   end
 
-  defp server_args() do
-    Application.get_env(:nerves_ntp, :servers, [
-      "0.pool.ntp.org",
-      "1.pool.ntp.org",
-      "2.pool.ntp.org",
-      "3.pool.ntp.org"
-    ])
-    |> Enum.flat_map(fn s -> ["-p", s] end)
+  defp server_args(servers) do
+    Enum.flat_map(servers, fn s -> ["-p", s] end)
   end
+
+  defp set_time_args(true), do: []
+  defp set_time_args(false), do: ["-w"]
 end

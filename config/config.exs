@@ -8,6 +8,8 @@ use Mix.Config
 # if you want to provide default values for your application for
 # 3rd-party users, it should be done in your "mix.exs" file.
 
+config :nerves_ntp, ntpd: "test/fixtures/fake_busybox_ntpd", set_time: false
+
 # You can configure your application as:
 #
 #     config :nerves_ntp, key: :value

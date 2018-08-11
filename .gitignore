@@ -22,3 +22,6 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 nerves_ntp-*.tar
 
+# Ignore C build products
+/priv/
+/src/*.o

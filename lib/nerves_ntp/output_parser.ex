@@ -6,7 +6,11 @@ defmodule Nerves.NTP.OutputParser do
     {:timeout,
      ~r/ntpd: timed out waiting for (?<address>\S+), reach (?<reach>0x[0-9a-fA-F]+), next query in (?<next_query>\d+)s/},
     {:reply,
-     ~r/ntpd: reply from (?<address>\S+): offset:(?<offset>[+-]?\d*\.\d+)(?![-+0-9\.]) delay:(?<delay>[+-]?\d*\.\d+)(?![-+0-9\.]) status:(?<status>0x[0-9a-fA-F]+) strat:(?<strat>\d+) refid:(?<refid>0x[0-9a-fA-F]+) rootdelay:(?<rootdelay>[+-]?\d*\.\d+)(?![-+0-9\.]) reach:(?<reach>0x[0-9a-fA-F]+)/}
+     ~r/ntpd: reply from (?<address>\S+): offset:(?<offset>[+-]?\d*\.\d+)(?![-+0-9\.]) delay:(?<delay>[+-]?\d*\.\d+)(?![-+0-9\.]) status:(?<status>0x[0-9a-fA-F]+) strat:(?<stratum>\d+) refid:(?<refid>0x[0-9a-fA-F]+) rootdelay:(?<rootdelay>[+-]?\d*\.\d+)(?![-+0-9\.]) reach:(?<reach>0x[0-9a-fA-F]+)/},
+    {:periodic, ~r/ntpd_script: periodic,(?<freq_drift_ppm>[+-]?\d+),(?<offset>[+-]?\d*\.\d+),(?<stratum>\d+),(?<poll_interval>\d+)/},
+    {:unsync, ~r/ntpd_script: unsync,(?<freq_drift_ppm>[+-]?\d+),(?<offset>[+-]?\d*\.\d+),(?<stratum>\d+),(?<poll_interval>\d+)/},
+    {:step, ~r/ntpd_script: step,(?<freq_drift_ppm>[+-]?\d+),(?<offset>[+-]?\d*\.\d+),(?<stratum>\d+),(?<poll_interval>\d+)/},
+    {:stratum, ~r/ntpd_script: stratum,(?<freq_drift_ppm>[+-]?\d+),(?<offset>[+-]?\d*\.\d+),(?<stratum>\d+),(?<poll_interval>\d+)/}
   ]
 
   @doc """
@@ -44,9 +48,11 @@ defmodule Nerves.NTP.OutputParser do
   defp parse_capture({"offset", value}), do: {:offset, parse_float(value)}
   defp parse_capture({"delay", value}), do: {:delay, parse_float(value)}
   defp parse_capture({"status", value}), do: {:status, parse_int(value)}
-  defp parse_capture({"strat", value}), do: {:stratum, parse_int(value)}
+  defp parse_capture({"stratum", value}), do: {:stratum, parse_int(value)}
   defp parse_capture({"refid", value}), do: {:refid, parse_int(value)}
   defp parse_capture({"rootdelay", value}), do: {:rootdelay, parse_float(value)}
+  defp parse_capture({"freq_drift_ppm", value}), do: {:freq_drift_ppm, parse_int(value)}
+  defp parse_capture({"poll_interval", value}), do: {:poll_interval, parse_int(value)}
 
   defp parse_int(<<"0x", hex::binary>>), do: String.to_integer(hex, 16)
   defp parse_int(dec), do: String.to_integer(dec)
