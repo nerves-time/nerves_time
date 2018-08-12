@@ -1,5 +1,8 @@
 # nerves_time
 
+[![CircleCI](https://circleci.com/gh/fhunleth/nerves_time.svg?style=svg)](https://circleci.com/gh/fhunleth/nerves_time)
+[![Hex version](https://img.shields.io/hexpm/v/nerves_time.svg "Hex version")](https://hex.pm/packages/nerves_time)
+
 `Nerves.Time` keeps the system clock on [Nerves](http://nerves-project.org)
 devices in sync when connected to the network and close to in sync when
 disconnected. It's especially useful for devices lacking a [Battery-backed
