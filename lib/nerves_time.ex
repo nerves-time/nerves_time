@@ -15,4 +15,11 @@ defmodule Nerves.Time do
   ntpd sends a notification that the device's clock stratum is 4 or less.
   """
   defdelegate is_synchronized, to: Nerves.Time.Ntpd
+
+  @doc """
+  Can be used to configure NTP server pool at runtime.
+  """
+  def configure_servers(servers) when is_list(servers) do
+    Application.put_env(:nerves_time, :servers, servers)
+  end
 end
