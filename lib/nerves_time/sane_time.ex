@@ -33,10 +33,10 @@ defmodule Nerves.Time.SaneTime do
   Currently if the time doesn't look right, it's set to the build time.
   """
   def make_sane(time) do
-    if not is_sane(time) do
-      @build_time
-    else
+    if is_sane(time) do
       time
+    else
+      @build_time
     end
   end
 
