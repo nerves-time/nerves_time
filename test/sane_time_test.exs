@@ -1,7 +1,7 @@
 defmodule SaneTimeTest do
   use ExUnit.Case
 
-  alias Nerves.NTP.SaneTime
+  alias Nerves.Time.SaneTime
 
   test "dates before build are adjusted" do
     before_build = NaiveDateTime.utc_now() |> Map.put(:year, 2017)

@@ -1,4 +1,4 @@
-defmodule Nerves.NTP.OutputParser do
+defmodule Nerves.Time.NtpdParser do
   @responses [
     {:bad_address, ~r/ntpd: bad address '(?<server>\S+)'/},
     {:address, ~r/ntpd: '(?<server>\S+)' is (?<address>\S+)/},
@@ -21,7 +21,7 @@ defmodule Nerves.NTP.OutputParser do
   Parse a message from Busybox ntpd.
 
   ```
-  iex> Nerves.NTP.OutputParser.parse("ntpd: sending query to 195.78.244.50")
+  iex> Nerves.Time.NtpdParser.parse("ntpd: sending query to 195.78.244.50")
   {:query, %{address: "195.78.244.50"}})
   ```
   """

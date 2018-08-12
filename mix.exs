@@ -1,10 +1,10 @@
-defmodule Nerves.NTP.MixProject do
+defmodule Nerves.Time.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :nerves_ntp,
-      version: "0.3.0",
+      app: :nerves_time,
+      version: "0.1.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       compilers: [:elixir_make | Mix.compilers()],
@@ -20,7 +20,7 @@ defmodule Nerves.NTP.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Nerves.NTP.Application, []}
+      mod: {Nerves.Time.Application, []}
     ]
   end
 
@@ -40,9 +40,9 @@ defmodule Nerves.NTP.MixProject do
         "CHANGELOG.md",
         "Makefile"
       ],
-      maintainers: ["Marcin Operacz", "Wojciech Mandrysz"],
+      maintainers: ["Frank Hunleth"],
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/evokly/nerves_ntp"}
+      links: %{"GitHub" => "https://github.com/fhunleth/nerves_time"}
     ]
   end
 

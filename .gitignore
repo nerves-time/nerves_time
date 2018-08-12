@@ -20,7 +20,7 @@ erl_crash.dump
 *.ez
 
 # Ignore package tarball (built via "mix hex.build").
-nerves_ntp-*.tar
+nerves_time-*.tar
 
 # Ignore C build products
 /priv/

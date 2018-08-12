@@ -1,6 +1,6 @@
-defmodule Nerves.NTP.Worker do
+defmodule Nerves.Time.Ntpd do
   use GenServer
-  alias Nerves.NTP.OutputParser
+  alias Nerves.Time.{NtpdParser, FileTime}
   require Logger
 
   @default_ntpd_path "/usr/sbin/ntpd"
@@ -44,19 +44,16 @@ defmodule Nerves.NTP.Worker do
 
   def handle_info({_, {:data, {:eol, message}}}, state) do
     message
-    |> OutputParser.parse()
+    |> NtpdParser.parse()
     |> handle_ntpd(state)
   end
 
   defp run_ntpd() do
-    ntpd_path = Application.get_env(:nerves_ntp, :ntpd, @default_ntpd_path)
-    servers = Application.get_env(:nerves_ntp, :servers, @default_ntp_servers)
-    set_time = Application.get_env(:nerves_ntp, :set_time, true)
-    ntpd_script_path = Application.app_dir(:nerves_ntp, "priv/ntpd_script")
+    ntpd_path = Application.get_env(:nerves_time, :ntpd, @default_ntpd_path)
+    servers = Application.get_env(:nerves_time, :servers, @default_ntp_servers)
+    ntpd_script_path = Application.app_dir(:nerves_time, "priv/ntpd_script")
 
-    args =
-      [ntpd_path, "-n", "-d", "-S", ntpd_script_path] ++
-        server_args(servers) ++ set_time_args(set_time)
+    args = [ntpd_path, "-n", "-d", "-S", ntpd_script_path] ++ server_args(servers)
 
     Logger.debug("Running ntp as: #{inspect(args)}")
 
@@ -77,11 +74,13 @@ defmodule Nerves.NTP.Worker do
     Enum.flat_map(servers, fn s -> ["-p", s] end)
   end
 
-  defp set_time_args(true), do: []
-  defp set_time_args(false), do: ["-w"]
-
   defp handle_ntpd({report, result}, state) when report in [:stratum, :periodic] do
     synchronized = maybe_update_clock(result)
+
+    if synchronized != state.synchronized do
+      Logger.info("ntpd synchronization changed (now #{synchronized}): #{inspect(result)}")
+    end
+
     {:noreply, %{state | synchronized: synchronized}}
   end
 
@@ -110,7 +109,7 @@ defmodule Nerves.NTP.Worker do
   defp maybe_update_clock(%{stratum: stratum})
        when stratum <= 4 do
     # Update the time assuming that we're getting time from a decent clock.
-    Nerves.NTP.FileTime.update()
+    FileTime.update()
     true
   end
 

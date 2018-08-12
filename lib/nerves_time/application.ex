@@ -1,30 +1,30 @@
-defmodule Nerves.NTP.Application do
+defmodule Nerves.Time.Application do
   @moduledoc false
   require Logger
   use Application
 
   def start(_type, _args) do
     children = [
-      {Nerves.NTP.Worker, []}
+      {Nerves.Time.Ntpd, []}
     ]
 
     # Sanity check and adjust the clock
     adjust_clock()
 
-    opts = [strategy: :one_for_one, name: Nerves.NTP.Supervisor]
+    opts = [strategy: :one_for_one, name: Nerves.Time.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
   def stop(_state) do
     # Update the file that keeps track of the time one last time.
-    Nerves.NTP.FileTime.update()
+    Nerves.Time.FileTime.update()
   end
 
   defp adjust_clock() do
-    file_time = Nerves.NTP.FileTime.time()
+    file_time = Nerves.Time.FileTime.time()
     now = NaiveDateTime.utc_now()
 
-    case Nerves.NTP.SaneTime.derive_time(now, file_time) do
+    case Nerves.Time.SaneTime.derive_time(now, file_time) do
       ^now ->
         # No change to the current time. This means that we either have a
         # real-time clock that sets the time or the default time that was

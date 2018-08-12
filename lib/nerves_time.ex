@@ -1,4 +1,4 @@
-defmodule Nerves.NTP do
+defmodule Nerves.Time do
   @moduledoc """
 
   """
@@ -10,5 +10,5 @@ defmodule Nerves.NTP do
   returns false. Nerves.Time decides that NTP is synchronized when
   ntpd sends a notification that the device's clock stratum is 4 or less.
   """
-  defdelegate is_synchronized, to: Nerves.NTP.Worker
+  defdelegate is_synchronized, to: Nerves.Time.Ntpd
 end

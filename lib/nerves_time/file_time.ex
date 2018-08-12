@@ -1,4 +1,4 @@
-defmodule Nerves.NTP.FileTime do
+defmodule Nerves.Time.FileTime do
   @default_path ".nerves_time"
 
   @doc """
@@ -28,7 +28,7 @@ defmodule Nerves.NTP.FileTime do
   """
   @spec time_file() :: binary()
   def time_file() do
-    Application.get_env(:nerves_ntp, :time_file, @default_path)
+    Application.get_env(:nerves_time, :time_file, @default_path)
     |> Path.expand(System.user_home())
   end
 end

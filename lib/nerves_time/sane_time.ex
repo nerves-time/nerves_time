@@ -1,4 +1,4 @@
-defmodule Nerves.NTP.SaneTime do
+defmodule Nerves.Time.SaneTime do
   @build_time NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
   @newest_time %{@build_time | year: @build_time.year + 20}
 
