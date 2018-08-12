@@ -43,6 +43,9 @@ config :nerves_time, :servers, [
   ]
 ```
 
+It's also possible to configure NTP servers at runtime. See
+`Nerves.Time.set_ntp_servers/1`.
+
 ## Algorithm
 
 Here's the basic idea behind `nerves_time`:
