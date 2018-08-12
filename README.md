@@ -57,7 +57,7 @@ Here's the basic idea behind `nerves_time`:
   currently only done at around 11 minute intervals to avoid needless exercising
   of Flash-based memory.
 
-To check the NTP synchronization status, call `Nerves.Time.is_synchronized/0`.
+To check the NTP synchronization status, call `Nerves.Time.synchronized?/0`.
 
 ## Credits and license
 

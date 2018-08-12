@@ -24,9 +24,9 @@ defmodule Nerves.Time.Ntpd do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  @spec is_synchronized() :: true | false
-  def is_synchronized() do
-    GenServer.call(__MODULE__, :is_synchronized)
+  @spec synchronized?() :: true | false
+  def synchronized?() do
+    GenServer.call(__MODULE__, :synchronized?)
   end
 
   @spec init(any()) :: {:ok, any()}
@@ -35,7 +35,7 @@ defmodule Nerves.Time.Ntpd do
     {:ok, state}
   end
 
-  def handle_call(:is_synchronized, _from, state) do
+  def handle_call(:synchronized?, _from, state) do
     {:reply, state.synchronized, state}
   end
 
