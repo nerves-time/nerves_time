@@ -25,9 +25,7 @@ defmodule Nerves.NTP.MixProject do
   end
 
   defp description do
-    """
-    Synchronize system time using Busybox `ntpd`.
-    """
+    "Keep time in sync on Nerves devices"
   end
 
   defp package do

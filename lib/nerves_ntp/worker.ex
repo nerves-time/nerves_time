@@ -19,8 +19,7 @@ defmodule Nerves.NTP.Worker do
 
   @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(_args) do
-    Logger.debug("Starting Worker")
-    GenServer.start_link(__MODULE__, [])
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
   @spec is_synchronized() :: true | false
@@ -44,14 +43,9 @@ defmodule Nerves.NTP.Worker do
   end
 
   def handle_info({_, {:data, {:eol, message}}}, state) do
-    OutputParser.parse(message)
+    message
+    |> OutputParser.parse()
     |> handle_ntpd(state)
-  end
-
-  def handle_info(msg, state) do
-    Logger.debug("#{inspect(msg)}")
-    Logger.debug("#{inspect(state)}")
-    {:noreply, state}
   end
 
   defp run_ntpd() do
@@ -88,7 +82,6 @@ defmodule Nerves.NTP.Worker do
 
   defp handle_ntpd({report, result}, state) when report in [:stratum, :periodic] do
     synchronized = maybe_update_clock(result)
-
     {:noreply, %{state | synchronized: synchronized}}
   end
 
@@ -104,15 +97,27 @@ defmodule Nerves.NTP.Worker do
     {:noreply, new_state}
   end
 
-  defp handle_ntpd(_, port) do
-    {:noreply, port}
+  defp handle_ntpd({:step, result}, state) do
+    Logger.debug("ntpd stepped the clock: #{inspect(result)}")
+    {:noreply, state}
   end
 
-  defp maybe_update_clock(%{stratum: stratum, poll_interval: poll_interval})
-       when stratum <= 4 and poll_interval >= 128 do
+  defp handle_ntpd(_message, state) do
+    # Logger.debug("ntpd got: #{inspect message}")
+    {:noreply, state}
+  end
+
+  defp maybe_update_clock(%{stratum: stratum})
+       when stratum <= 4 do
+    # Update the time assuming that we're getting time from a decent clock.
     Nerves.NTP.FileTime.update()
     true
   end
 
   defp maybe_update_clock(_result), do: false
+
+  # Future: Need to attach a RTC
+  # Note: the Busybox ntpd source waits for poll_interval to be >=128. This
+  #       actually takes a little while.
+  # defp maybe_update_hwclock()
 end

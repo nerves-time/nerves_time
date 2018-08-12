@@ -1,8 +1,6 @@
 defmodule Nerves.NTP.Application do
-  # See https://hexdocs.pm/elixir/Application.html
-  # for more information on OTP Applications
   @moduledoc false
-
+  require Logger
   use Application
 
   def start(_type, _args) do
@@ -35,7 +33,24 @@ defmodule Nerves.NTP.Application do
         :ok
 
       new_time ->
-        IO.puts("I want to change the time to #{inspect(new_time)}!")
+        set_time(new_time)
+    end
+  end
+
+  defp set_time(%NaiveDateTime{} = time) do
+    string_time = time |> NaiveDateTime.truncate(:second) |> NaiveDateTime.to_string()
+
+    case System.cmd("date", ["-u", "-s", string_time]) do
+      {_result, 0} ->
+        Logger.info("nerves_time initialized clock to #{string_time} UTC")
+        :ok
+
+      {message, code} ->
+        Logger.error(
+          "nerves_time failed to set date/time to '#{string_time}': #{code} #{inspect(message)}"
+        )
+
+        :error
     end
   end
 end
