@@ -3,6 +3,8 @@ defmodule Nerves.Time.Ntpd do
   alias Nerves.Time.{NtpdParser, FileTime}
   require Logger
 
+  @moduledoc false
+
   @default_ntpd_path "/usr/sbin/ntpd"
   @default_ntp_servers [
     "0.pool.ntp.org",

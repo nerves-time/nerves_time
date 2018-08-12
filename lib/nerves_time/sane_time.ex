@@ -2,6 +2,8 @@ defmodule Nerves.Time.SaneTime do
   @build_time NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
   @newest_time %{@build_time | year: @build_time.year + 20}
 
+  @moduledoc false
+
   @doc """
   Figure out a guess of the real time based on the current system clock (possible_time)
   and the latest timestamp from FileTime.

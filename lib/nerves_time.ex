@@ -1,6 +1,10 @@
 defmodule Nerves.Time do
   @moduledoc """
-
+  `Nerves.Time` keeps the system clock on [Nerves](http://nerves-project.org)
+  devices in sync when connected to the network and close to in sync when
+  disconnected. It's especially useful for devices lacking a [Battery-backed
+  real-time clock](https://en.wikipedia.org/wiki/Real-time_clock) and will advance
+  the clock at startup to a reasonable guess.
   """
 
   @doc """

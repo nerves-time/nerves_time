@@ -1,6 +1,8 @@
 defmodule Nerves.Time.FileTime do
   @default_path ".nerves_time"
 
+  @moduledoc false
+
   @doc """
   Update the file holding a stamp of the current time.
   """

@@ -1,4 +1,6 @@
 defmodule Nerves.Time.NtpdParser do
+  @moduledoc false
+
   @responses [
     {:bad_address, ~r/ntpd: bad address '(?<server>\S+)'/},
     {:address, ~r/ntpd: '(?<server>\S+)' is (?<address>\S+)/},
