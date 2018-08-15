@@ -13,3 +13,4 @@ jobs:
       - run: mix deps.get --only test
       - run: mix test
       - run: mix hex.build
+      - run: mix format --check-formatted
