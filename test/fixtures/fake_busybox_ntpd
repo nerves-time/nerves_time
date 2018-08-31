@@ -16,6 +16,7 @@ ntpd: reply from 129.70.132.37: offset:-0.007726 delay:0.105911 status:0x24 stra
 ntpd: reply from 193.225.190.6: offset:-0.010856 delay:0.119149 status:0x24 strat:2 refid:0x11626fc3 rootdelay:0.004623 reach:0x01
 ntpd: sending query to 193.225.190.6
 ntpd: sending query to 129.70.132.37
+ntpd_script: stratum,0,0.190975,3,1
 EOF
     sleep 1
 done

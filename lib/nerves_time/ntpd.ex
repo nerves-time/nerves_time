@@ -121,7 +121,7 @@ defmodule Nerves.Time.Ntpd do
   end
 
   defp handle_ntpd(_message, state) do
-    # Logger.debug("ntpd got: #{inspect message}")
+    # Logger.debug("ntpd got: #{inspect _message}")
     {:noreply, state}
   end
 
