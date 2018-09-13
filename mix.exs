@@ -51,7 +51,7 @@ defmodule Nerves.Time.MixProject do
       {:muontrap, "~> 0.4"},
       {:elixir_make, "~> 0.4", runtime: false},
       {:ex_doc, "~> 0.19", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.3", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.3", only: [:dev, :test], runtime: false}
     ]
   end
 end
