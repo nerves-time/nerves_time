@@ -8,6 +8,7 @@ defmodule Nerves.Time.SaneTime do
   Figure out a guess of the real time based on the current system clock (possible_time)
   and the latest timestamp from FileTime.
   """
+  @spec derive_time(any(), any()) :: NaiveDateTime.t()
   def derive_time(possible_time, file_time) do
     # First normalize the input times so that they're in a reasonable time interval
     sane_file_time = make_sane(file_time)
@@ -32,6 +33,7 @@ defmodule Nerves.Time.SaneTime do
 
   Currently if the time doesn't look right, it's set to the build time.
   """
+  @spec make_sane(any()) :: NaiveDateTime.t()
   def make_sane(time) do
     if is_sane(time) do
       time

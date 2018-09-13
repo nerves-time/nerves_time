@@ -6,7 +6,7 @@ defmodule Nerves.Time.FileTime do
   @doc """
   Update the file holding a stamp of the current time.
   """
-  @spec update() :: :ok | {:error, term()}
+  @spec update() :: :ok | {:error, File.posix()}
   def update() do
     File.touch(time_file())
   end
@@ -14,7 +14,7 @@ defmodule Nerves.Time.FileTime do
   @doc """
   Return the timestamp of when update was last called.
   """
-  @spec time() :: NaiveDateTime.t() | {:error, term()}
+  @spec time() :: NaiveDateTime.t() | {:error, File.posix()}
   def time() do
     case File.stat(time_file()) do
       {:ok, stat} ->
@@ -28,7 +28,7 @@ defmodule Nerves.Time.FileTime do
   @doc """
   Return the path to the file that keeps track of the time
   """
-  @spec time_file() :: binary()
+  @spec time_file() :: Path.t()
   def time_file() do
     Application.get_env(:nerves_time, :time_file, @default_path)
     |> Path.expand(System.user_home())
