@@ -15,7 +15,7 @@ defmodule Nerves.Time.Ntpd do
 
   defmodule State do
     @moduledoc false
-    @type t() :: %__MODULE__{port: nil | port, synchronized: boolean()}
+    @type t() :: %__MODULE__{port: nil | port(), synchronized: boolean()}
     defstruct port: nil,
               synchronized: false
   end
@@ -151,7 +151,7 @@ defmodule Nerves.Time.Ntpd do
 
     # Call ntpd using muontrap. Muontrap will kill ntpd if this GenServer
     # crashes.
-    Port.open({:spawn_executable, MuonTrap.muontrap_path()}, [
+    Port.open({:spawn_executable, MuonTrap.muontrap_path() |> to_charlist()}, [
       {:args, ["--" | args]},
       :exit_status,
       :use_stdio,
