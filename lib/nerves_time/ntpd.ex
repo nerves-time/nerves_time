@@ -15,11 +15,12 @@ defmodule Nerves.Time.Ntpd do
 
   defmodule State do
     @moduledoc false
+    @type t() :: %__MODULE__{port: nil | port, synchronized: boolean()}
     defstruct port: nil,
               synchronized: false
   end
 
-  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
+  @spec start_link(any()) :: GenServer.on_start()
   def start_link(_args) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
@@ -44,7 +45,7 @@ defmodule Nerves.Time.Ntpd do
     GenServer.call(__MODULE__, :restart_ntpd)
   end
 
-  @spec init(any()) :: {:ok, any()}
+  @spec init(any()) :: {:ok, State.t()}
   def init(_args) do
     {:ok, do_restart_ntpd(%State{})}
   end
