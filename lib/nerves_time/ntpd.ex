@@ -1,6 +1,6 @@
 defmodule Nerves.Time.Ntpd do
   use GenServer
-  alias Nerves.Time.{NtpdParser, FileTime}
+  alias Nerves.Time.NtpdParser
   require Logger
 
   @moduledoc false
@@ -15,14 +15,16 @@ defmodule Nerves.Time.Ntpd do
 
   defmodule State do
     @moduledoc false
-    @type t() :: %__MODULE__{port: nil | port(), synchronized: boolean()}
+    @type t() :: %__MODULE__{port: nil | port(), synchronized: boolean(), timestamp_handler: nil | module(), timestamp_state: nil | term()}
     defstruct port: nil,
-              synchronized: false
+              synchronized: false,
+              timestamp_handler: nil,
+              timestamp_state: nil
   end
 
   @spec start_link(any()) :: GenServer.on_start()
-  def start_link(_args) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+  def start_link(args) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   @spec synchronized?() :: boolean()
@@ -46,8 +48,8 @@ defmodule Nerves.Time.Ntpd do
   end
 
   @spec init(any()) :: {:ok, State.t()}
-  def init(_args) do
-    {:ok, do_restart_ntpd(%State{})}
+  def init(timestamp_handler: timestamp_handler, timestamp_state: timestamp_state) do
+    {:ok, do_restart_ntpd(%State{timestamp_handler: timestamp_handler, timestamp_state: timestamp_state})}
   end
 
   def handle_call(:synchronized?, _from, state) do
@@ -95,8 +97,8 @@ defmodule Nerves.Time.Ntpd do
     Enum.flat_map(servers, fn s -> ["-p", s] end)
   end
 
-  defp handle_ntpd({report, result}, state) when report in [:stratum, :periodic] do
-    synchronized = maybe_update_clock(result)
+  defp handle_ntpd({report, result}, state = %{timestamp_handler: timestamp_handler, timestamp_state: timestamp_state}) when report in [:stratum, :periodic] do
+    synchronized = maybe_update_clock(timestamp_handler, timestamp_state, result)
 
     if synchronized != state.synchronized do
       Logger.info("ntpd synchronization changed (now #{synchronized}): #{inspect(result)}")
@@ -161,14 +163,14 @@ defmodule Nerves.Time.Ntpd do
     ])
   end
 
-  defp maybe_update_clock(%{stratum: stratum})
+  defp maybe_update_clock(timestamp_handler, timestamp_state, %{stratum: stratum})
        when stratum <= 4 do
     # Update the time assuming that we're getting time from a decent clock.
-    FileTime.update()
+    apply(timestamp_handler, :update, [timestamp_state])
     true
   end
 
-  defp maybe_update_clock(_result), do: false
+  defp maybe_update_clock(_timestamp_handler, _timestamp_state, _result), do: false
 
   # Future: Need to attach a RTC
   # Note: the Busybox ntpd source waits for poll_interval to be >=128. This
