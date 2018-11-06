@@ -21,6 +21,16 @@ def deps do
 end
 ```
 
+Ensure that your `vm.args` allows for
+[timewarps](http://erlang.org/doc/apps/erts/time_correction.html#time-warp-modes).
+If it doesn't, `nerves_time` will update the OS system time, but Erlang's system
+time will lag. The following line should be in the beginning or middle of the
+`vm.args` file:
+
+```elixir
++C multi_time_warp
+```
+
 If you're using one of the official Nerves Systems, then this is all that's
 needed. `nerves_time` requires Busybox's `ntpd` and `date` applets to be
 enabled. If you haven't explicitly disabled the, they're probably enabled.
