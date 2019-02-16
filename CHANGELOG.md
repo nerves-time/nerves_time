@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.1
+
+* Improvements
+  * Move C build products under `_build`. This lets you switch targets with out
+    cleaning builds in between.
+
 ## v0.2.0
 
 * Added support for configuring NTP servers at runtime. Thanks to @ConnorRigby

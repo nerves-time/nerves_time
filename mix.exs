@@ -4,7 +4,7 @@ defmodule Nerves.Time.MixProject do
   def project do
     [
       app: :nerves_time,
-      version: "0.2.0",
+      version: "0.2.1",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       build_embedded: true,
