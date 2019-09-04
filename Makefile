@@ -7,13 +7,14 @@
 #
 # Variables to override:
 #
-# MIX_COMPILE_PATH path to the build's ebin directory
+# MIX_APP_PATH  path to the build directory
+#
 # CC            C compiler. MUST be set if crosscompiling
 # CFLAGS        compiler flags for compiling all C files
 # LDFLAGS       linker flags for linking all binaries
 
-PREFIX = $(MIX_COMPILE_PATH)/../priv
-BUILD  = $(MIX_COMPILE_PATH)/../obj
+PREFIX = $(MIX_APP_PATH)/priv
+BUILD  = $(MIX_APP_PATH)/obj
 
 NTPD_SCRIPT = $(PREFIX)/ntpd_script
 
@@ -37,15 +38,12 @@ $(BUILD)/%.o: src/%.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 
 $(NTPD_SCRIPT): $(OBJ)
-	$(CC) $^ $(LDFLAGS) -o $@
+	$(CC) -o $@ $(LDFLAGS) $^
 
-$(PREFIX):
-	mkdir -p $@
-
-$(BUILD):
+$(PREFIX) $(BUILD):
 	mkdir -p $@
 
 clean:
-	$(RM) $(NTPD_SCRIPT) $(BUILD)/*.o
+	$(RM) $(NTPD_SCRIPT) $(OBJ)
 
 .PHONY: all clean calling_from_make install
