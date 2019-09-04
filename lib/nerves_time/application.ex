@@ -42,13 +42,14 @@ defmodule Nerves.Time.Application do
 
     case System.cmd("date", ["-u", "-s", string_time]) do
       {_result, 0} ->
-        Logger.info("nerves_time initialized clock to #{string_time} UTC")
+        _ = Logger.info("nerves_time initialized clock to #{string_time} UTC")
         :ok
 
       {message, code} ->
-        Logger.error(
-          "nerves_time failed to set date/time to '#{string_time}': #{code} #{inspect(message)}"
-        )
+        _ =
+          Logger.error(
+            "nerves_time failed to set date/time to '#{string_time}': #{code} #{inspect(message)}"
+          )
 
         :error
     end

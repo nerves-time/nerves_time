@@ -77,7 +77,8 @@ defmodule Nerves.Time.Ntpd do
   end
 
   def handle_info({_, {:exit_status, code}}, state) do
-    Logger.error("ntpd exited with code: #{code}!")
+    _ = Logger.error("ntpd exited with code: #{code}!")
+
     {:stop, :ntpd_died, state}
   end
 
@@ -98,15 +99,16 @@ defmodule Nerves.Time.Ntpd do
   defp handle_ntpd({report, result}, state) when report in [:stratum, :periodic] do
     synchronized = maybe_update_clock(result)
 
-    if synchronized != state.synchronized do
-      Logger.info("ntpd synchronization changed (now #{synchronized}): #{inspect(result)}")
-    end
+    _ =
+      if synchronized != state.synchronized do
+        Logger.info("ntpd synchronization changed (now #{synchronized}): #{inspect(result)}")
+      end
 
     {:noreply, %{state | synchronized: synchronized}}
   end
 
   defp handle_ntpd({:unsync, _result}, state) do
-    Logger.error("ntpd reports that it is unsynchronized; restarting")
+    _ = Logger.error("ntpd reports that it is unsynchronized; restarting")
 
     # According to the Busybox ntpd docs, if you get an `unsync` notification, then
     # you should restart ntpd to be safe. This is stated to be due to name resolution
@@ -117,7 +119,7 @@ defmodule Nerves.Time.Ntpd do
   end
 
   defp handle_ntpd({:step, result}, state) do
-    Logger.debug("ntpd stepped the clock: #{inspect(result)}")
+    _ = Logger.debug("ntpd stepped the clock: #{inspect(result)}")
     {:noreply, state}
   end
 
@@ -137,7 +139,7 @@ defmodule Nerves.Time.Ntpd do
   end
 
   defp maybe_start_ntpd([]) do
-    Logger.debug("Not starting ntpd since no NTP servers.")
+    _ = Logger.debug("Not starting ntpd since no NTP servers.")
     nil
   end
 
@@ -147,7 +149,7 @@ defmodule Nerves.Time.Ntpd do
 
     args = [ntpd_path, "-n", "-d", "-S", ntpd_script_path] ++ server_args(servers)
 
-    Logger.debug("Starting ntpd as: #{inspect(args)}")
+    _ = Logger.debug("Starting ntpd as: #{inspect(args)}")
 
     # Call ntpd using muontrap. Muontrap will kill ntpd if this GenServer
     # crashes.
@@ -164,7 +166,7 @@ defmodule Nerves.Time.Ntpd do
   defp maybe_update_clock(%{stratum: stratum})
        when stratum <= 4 do
     # Update the time assuming that we're getting time from a decent clock.
-    FileTime.update()
+    _ = FileTime.update()
     true
   end
 
