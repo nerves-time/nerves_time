@@ -1,5 +1,7 @@
 defmodule NervesTime do
   @moduledoc """
+  Keep time in sync on Nerves devices
+
   `NervesTime` keeps the system clock on [Nerves](http://nerves-project.org)
   devices in sync when connected to the network and close to in sync when
   disconnected. It's especially useful for devices lacking a [Battery-backed
@@ -8,7 +10,7 @@ defmodule NervesTime do
   """
 
   @doc """
-  Check whether NTP is synchronized with the configured NTP servers.
+  Check whether NTP is synchronized with the configured NTP servers
 
   It's possible that the time is already set correctly when this returns false.
   `NervesTime` decides that NTP is synchronized when `ntpd` sends a
@@ -19,7 +21,7 @@ defmodule NervesTime do
   defdelegate synchronized?, to: NervesTime.Ntpd
 
   @doc """
-  Set the list of NTP servers.
+  Set the list of NTP servers
 
   Use this function to replace the list of NTP servers that are queried for
   time. It is also possible to set this list in your `config.exs` by doing
@@ -46,13 +48,13 @@ defmodule NervesTime do
   defdelegate set_ntp_servers(servers), to: NervesTime.Ntpd
 
   @doc """
-  Return the current NTP servers.
+  Return the current NTP servers
   """
   @spec ntp_servers() :: [String.t()] | {:error, term()}
   defdelegate ntp_servers(), to: NervesTime.Ntpd
 
   @doc """
-  Manually restart the NTP daemon.
+  Manually restart the NTP daemon
 
   This is normally not necessary since `NervesTime` handles restarting it
   automatically. An example of a reason to call this function is if you know
