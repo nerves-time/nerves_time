@@ -1,4 +1,4 @@
-defmodule Nerves.Time.FileTime do
+defmodule NervesTime.FileTime do
   @default_path ".nerves_time"
 
   @moduledoc false

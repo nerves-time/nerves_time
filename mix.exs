@@ -1,4 +1,4 @@
-defmodule Nerves.Time.MixProject do
+defmodule NervesTime.MixProject do
   use Mix.Project
 
   @version "0.2.1"
@@ -29,7 +29,7 @@ defmodule Nerves.Time.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Nerves.Time.Application, []}
+      mod: {NervesTime.Application, []}
     ]
   end
 

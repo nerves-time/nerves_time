@@ -3,7 +3,7 @@
 [![CircleCI](https://circleci.com/gh/fhunleth/nerves_time.svg?style=svg)](https://circleci.com/gh/fhunleth/nerves_time)
 [![Hex version](https://img.shields.io/hexpm/v/nerves_time.svg "Hex version")](https://hex.pm/packages/nerves_time)
 
-`Nerves.Time` keeps the system clock on [Nerves](http://nerves-project.org)
+`NervesTime` keeps the system clock on [Nerves](http://nerves-project.org)
 devices in sync when connected to the network and close to in sync when
 disconnected. It's especially useful for devices lacking a [Battery-backed
 real-time clock](https://en.wikipedia.org/wiki/Real-time_clock) and will advance
@@ -54,7 +54,7 @@ config :nerves_time, :servers, [
 ```
 
 It's also possible to configure NTP servers at runtime. See
-`Nerves.Time.set_ntp_servers/1`.
+`NervesTime.set_ntp_servers/1`.
 
 ## Algorithm
 
@@ -70,7 +70,7 @@ Here's the basic idea behind `nerves_time`:
   currently only done at around 11 minute intervals to avoid needless exercising
   of Flash-based memory.
 
-To check the NTP synchronization status, call `Nerves.Time.synchronized?/0`.
+To check the NTP synchronization status, call `NervesTime.synchronized?/0`.
 
 ## Credits and license
 

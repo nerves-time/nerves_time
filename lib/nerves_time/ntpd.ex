@@ -1,6 +1,6 @@
-defmodule Nerves.Time.Ntpd do
+defmodule NervesTime.Ntpd do
   use GenServer
-  alias Nerves.Time.FileTime
+  alias NervesTime.FileTime
   require Logger
 
   @moduledoc false

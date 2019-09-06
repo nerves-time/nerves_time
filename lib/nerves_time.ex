@@ -1,6 +1,6 @@
-defmodule Nerves.Time do
+defmodule NervesTime do
   @moduledoc """
-  `Nerves.Time` keeps the system clock on [Nerves](http://nerves-project.org)
+  `NervesTime` keeps the system clock on [Nerves](http://nerves-project.org)
   devices in sync when connected to the network and close to in sync when
   disconnected. It's especially useful for devices lacking a [Battery-backed
   real-time clock](https://en.wikipedia.org/wiki/Real-time_clock) and will
@@ -11,12 +11,12 @@ defmodule Nerves.Time do
   Check whether NTP is synchronized with the configured NTP servers.
 
   It's possible that the time is already set correctly when this returns false.
-  `Nerves.Time` decides that NTP is synchronized when `ntpd` sends a
+  `NervesTime` decides that NTP is synchronized when `ntpd` sends a
   notification that the device's clock stratum is 4 or less. Clock adjustments
   occur before this, though.
   """
   @spec synchronized?() :: boolean()
-  defdelegate synchronized?, to: Nerves.Time.Ntpd
+  defdelegate synchronized?, to: NervesTime.Ntpd
 
   @doc """
   Set the list of NTP servers.
@@ -34,7 +34,7 @@ defmodule Nerves.Time do
   ]
   ```
 
-  `Nerves.Time` uses [NTP Pool](https://www.ntppool.org/en/) by default. To
+  `NervesTime` uses [NTP Pool](https://www.ntppool.org/en/) by default. To
   disable this and configure servers solely at runtime, specify an empty list
   in `config.exs`:
 
@@ -43,18 +43,18 @@ defmodule Nerves.Time do
   ```
   """
   @spec set_ntp_servers([String.t()]) :: :ok
-  defdelegate set_ntp_servers(servers), to: Nerves.Time.Ntpd
+  defdelegate set_ntp_servers(servers), to: NervesTime.Ntpd
 
   @doc """
   Return the current NTP servers.
   """
   @spec ntp_servers() :: [String.t()] | {:error, term()}
-  defdelegate ntp_servers(), to: Nerves.Time.Ntpd
+  defdelegate ntp_servers(), to: NervesTime.Ntpd
 
   @doc """
   Manually restart the NTP daemon.
 
-  This is normally not necessary since `Nerves.Time` handles restarting it
+  This is normally not necessary since `NervesTime` handles restarting it
   automatically. An example of a reason to call this function is if you know
   when the Internet becomes available. For this case, calling `restart_ntp`
   will cancel `ntpd`'s internal timeouts and cause it to immediately send time
@@ -62,5 +62,5 @@ defmodule Nerves.Time do
   calling this function too frequently.
   """
   @spec restart_ntpd() :: :ok | {:error, term()}
-  defdelegate restart_ntpd(), to: Nerves.Time.Ntpd
+  defdelegate restart_ntpd(), to: NervesTime.Ntpd
 end
