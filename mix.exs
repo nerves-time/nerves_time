@@ -15,6 +15,7 @@ defmodule Nerves.Time.MixProject do
       compilers: [:elixir_make | Mix.compilers()],
       make_targets: ["all"],
       make_clean: ["clean"],
+      make_error_message: "",
       docs: docs(),
       start_permanent: Mix.env() == :prod,
       build_embedded: true,
