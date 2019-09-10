@@ -57,6 +57,7 @@ defmodule NervesTime.MixProject do
   defp deps do
     [
       {:muontrap, "~> 0.5"},
+      {:circuits_i2c, "~> 0.3"},
       {:elixir_make, "~> 0.6", runtime: false},
       {:ex_doc, "~> 0.19", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0.0-rc.6", only: [:dev, :test], runtime: false}

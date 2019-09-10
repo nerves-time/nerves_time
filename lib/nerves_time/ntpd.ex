@@ -1,6 +1,6 @@
 defmodule NervesTime.Ntpd do
   use GenServer
-  alias NervesTime.FileTime
+  alias NervesTime.RTC
   require Logger
 
   @moduledoc false
@@ -253,7 +253,7 @@ defmodule NervesTime.Ntpd do
     #       actually takes a little while.
 
     # Bump the file time for the no-RTC case.
-    _ = FileTime.update()
+    _ = RTC.update()
     true
   end
 
