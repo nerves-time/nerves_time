@@ -56,12 +56,27 @@ config :nerves_time, :servers, [
 It's also possible to configure NTP servers at runtime. See
 `NervesTime.set_ntp_servers/1`.
 
+`nerves_time` also has a concept of a valid time range. This minimizes time
+errors on systems without clocks or Internet connections or that may have some
+issue that causes a very wrong time value. The default valid time range is
+hardcoded and moves forward each release. It is not the build timestamp since
+that results in [non-reproducible builds](https://reproducible-builds.org).
+Applications can override the valid range via the application config:
+
+```elixir
+# config/config.exs
+
+config :nerves_time, earliest_time: ~N[2019-10-04 00:00:00], latest_time: ~N[2022-01-01 00:00:00]
+```
+
 ## Algorithm
 
 Here's the basic idea behind `nerves_time`:
 
-* If the clock hasn't been set or is invalid, set it to the time that
-  `nerves_time` was compiled.
+* If the clock hasn't been set or is invalid, set it to the earliest valid
+  time known to `nerves_time`. This is either set in the application config or
+  defaulted to a reasonable value that likely moves forward a little each
+  `nerves_time` release.
 * Check for `~/.nerves_time`. If it exists, advance the clock to it's last
   modification time.
 * Run Busybox `ntpd` to synchronize time using the [NTP

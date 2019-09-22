@@ -1,6 +1,9 @@
 defmodule NervesTime.SaneTime do
-  @build_time NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-  @newest_time %{@build_time | year: @build_time.year + 20}
+  # One of the ways that nerves_time determines whether a particular time is
+  # possible is whether it's in a known good range.
+
+  @default_earliest_time ~N[2019-10-04 00:00:00]
+  @default_latest_time %{@default_earliest_time | year: @default_earliest_time.year + 20}
 
   @moduledoc false
 
@@ -8,7 +11,7 @@ defmodule NervesTime.SaneTime do
   Figure out a guess of the real time based on the current system clock (possible_time)
   and the latest timestamp from FileTime.
   """
-  @spec derive_time(any(), any()) :: NaiveDateTime.t()
+  @spec derive_time(NaiveDateTime.t(), NaiveDateTime.t()) :: NaiveDateTime.t()
   def derive_time(possible_time, file_time) do
     # First normalize the input times so that they're in a reasonable time interval
     sane_file_time = make_sane(file_time)
@@ -24,28 +27,28 @@ defmodule NervesTime.SaneTime do
 
   @doc """
   This function takes a guess at the current time and tries to adjust it so
-  that it's not obviously wrong.
+  that it's not obviously wrong. Obviously wrong means that it is outside
+  of the configured valid time range.
 
-  Some things that could be wrong:
-
-  * The time is before this module was compiled.
-  * The time is 20 years in the future. (Assume that nothing goes 20 years without an update)
-
-  Currently if the time doesn't look right, it's set to the build time.
+  If the time doesn't look right, set it to the earliest time. Why not set it
+  to the latest allowed time if the time is in the future? The reason is
+  that a cause of future times is RTC corruption. The logic is that the earliest
+  allowed time is likely much closer to the actual time than the latest one.
   """
-  @spec make_sane(any()) :: NaiveDateTime.t()
-  def make_sane(time) do
-    if is_sane(time) do
+  @spec make_sane(NaiveDateTime.t()) :: NaiveDateTime.t()
+  def make_sane(%NaiveDateTime{} = time) do
+    earliest_time = Application.get_env(:nerves_time, :earliest_time, @default_earliest_time)
+    latest_time = Application.get_env(:nerves_time, :latest_time, @default_latest_time)
+
+    if within_interval(time, earliest_time, latest_time) do
       time
     else
-      @build_time
+      earliest_time
     end
   end
 
-  defp is_sane(%NaiveDateTime{} = time) do
-    NaiveDateTime.compare(time, @build_time) == :gt and
-      NaiveDateTime.compare(time, @newest_time) == :lt
+  defp within_interval(time, earliest_time, latest_time) do
+    NaiveDateTime.compare(time, earliest_time) == :gt and
+      NaiveDateTime.compare(time, latest_time) == :lt
   end
-
-  defp is_sane(_something_else), do: false
 end
