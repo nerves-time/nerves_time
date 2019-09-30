@@ -241,7 +241,11 @@ defmodule NervesTime.Ntpd do
     _ = Logger.debug("Starting #{ntpd_path} with: #{inspect(args)}")
 
     {:ok, pid} =
-      MuonTrap.Daemon.start_link(ntpd_path, args, env: [{"SOCKET_PATH", socket_path()}])
+      MuonTrap.Daemon.start_link(ntpd_path, args,
+        env: [{"SOCKET_PATH", socket_path()}],
+        stderr_to_stdout: true,
+        log_output: :debug
+      )
 
     %{state | daemon: pid, synchronized?: false}
   end
