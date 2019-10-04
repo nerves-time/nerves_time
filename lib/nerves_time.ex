@@ -7,6 +7,19 @@ defmodule NervesTime do
   disconnected. It's especially useful for devices lacking a [Battery-backed
   real-time clock](https://en.wikipedia.org/wiki/Real-time_clock) and will
   advance the clock at startup to a reasonable guess.
+
+  Nearly all configuration is via the application config (`config.exs`). The
+  following keys are available:
+
+  * `:servers` - a list of NTP servers for time synchronization. Specifying an
+    empty list turns off NTP
+  * `:time_file` - a file path for tracking the time. It allows the system to
+    start with a reasonable time quickly on boot and before the Internet is
+    available for NTP to work.
+  * `:earliest_time` - times before this are considered invalid and adjusted
+  * `:latest_time` - times after this are considered invalid and adjusted
+  * `:ntpd` - the absolute path to the Busybox `ntpd`. This only needs to be
+    set if your system does not provide `ntpd` in the `$PATH`.
   """
 
   @doc """
