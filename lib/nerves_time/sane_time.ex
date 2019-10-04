@@ -47,6 +47,11 @@ defmodule NervesTime.SaneTime do
     end
   end
 
+  # Fix anything bogus that's passed in. This does not feel very Erlang, but
+  # crashing nerves_time causes more pain than it's worth for purity.
+  def make_sane(_other),
+    do: Application.get_env(:nerves_time, :earliest_time, @default_earliest_time)
+
   defp within_interval(time, earliest_time, latest_time) do
     NaiveDateTime.compare(time, earliest_time) == :gt and
       NaiveDateTime.compare(time, latest_time) == :lt
