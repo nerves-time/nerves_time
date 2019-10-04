@@ -12,16 +12,17 @@ defmodule NervesTime.FileTime do
   end
 
   @doc """
-  Return the timestamp of when update was last called.
+  Return the timestamp of when update was last called or
+  the Unix epoch time (1970-01-01) should that not work.
   """
-  @spec time() :: NaiveDateTime.t() | {:error, File.posix()}
+  @spec time() :: NaiveDateTime.t()
   def time() do
     case File.stat(time_file()) do
       {:ok, stat} ->
         NaiveDateTime.from_erl!(stat.mtime)
 
-      error ->
-        error
+      _error ->
+        ~N[1970-01-01 00:00:00]
     end
   end
 
