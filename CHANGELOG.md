@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.3.1
+
+* Bug fixes
+  * Move ntpd's prints to the log. The previous prints to the console were quite
+    annoying to say the least.
+  * Remove the build timestamp so that `nerves_time` builds are reproducible.
+    This is important for users that want to recreate firmware images with as
+    few differences as possible. The build timestamp had restricted the earliest
+    allowed time. The earliest time is now hardcoded, but can be overridden by
+    application config (same with the latest possible time.)
+
 ## v0.3.0
 
 IMPORTANT: This release moves `Nerves.Time` to the `NervesTime` namespace. If
