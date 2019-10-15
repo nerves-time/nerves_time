@@ -147,7 +147,6 @@ defmodule NervesTime.Ntpd do
   @impl true
   def handle_info({:udp, socket, _, 0, data}, %{socket: socket} = state) do
     report = :erlang.binary_to_term(data)
-    _ = Logger.debug("Received report from ntpd: #{inspect(report)}")
     handle_ntpd_report(report, state)
   end
 
@@ -236,15 +235,17 @@ defmodule NervesTime.Ntpd do
     ntpd_script_path = Application.app_dir(:nerves_time, ["priv", "ntpd_script"])
 
     server_args = Enum.flat_map(servers, fn s -> ["-p", s] end)
-    args = ["-n", "-d", "-S", ntpd_script_path | server_args]
+
+    # Add "-d" and enable log_output below for more verbose prints from ntpd.
+    args = ["-n", "-S", ntpd_script_path | server_args]
 
     _ = Logger.debug("Starting #{ntpd_path} with: #{inspect(args)}")
 
     {:ok, pid} =
       MuonTrap.Daemon.start_link(ntpd_path, args,
         env: [{"SOCKET_PATH", socket_path()}],
-        stderr_to_stdout: true,
-        log_output: :debug
+        stderr_to_stdout: true
+        # log_output: :debug
       )
 
     %{state | daemon: pid, synchronized?: false}
