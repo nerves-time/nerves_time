@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.2
+
+* Improvements
+  * Further reduce ntpd's logging. It is just too much especially when the
+    internet is down.
+
 ## v0.3.1
 
 * Bug fixes
