@@ -69,6 +69,19 @@ Applications can override the valid range via the application config:
 config :nerves_time, earliest_time: ~N[2019-10-04 00:00:00], latest_time: ~N[2022-01-01 00:00:00]
 ```
 
+If there are external modules that depend on knowing about time changes, for example a hardware RTC, event handlers can be specified for that:
+```elixir
+# Time sync client module
+
+handler_fun = fn(stratum) -> 
+  # ... do what needs to be done on time sync, eg. syncing a hardware RTC to system time
+end
+
+NervesTime.add_time_sync_handler(&handler_fun)
+
+```
+and handlers will be called when .
+
 ## Algorithm
 
 Here's the basic idea behind `nerves_time`:

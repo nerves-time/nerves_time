@@ -27,12 +27,14 @@ defmodule NervesTime.Ntpd do
     @type t() :: %__MODULE__{
             socket: :gen_udp.socket(),
             servers: [String.t()],
+            sync_handlers: [fun()],
             daemon: nil | pid(),
             synchronized?: boolean(),
             clean_start?: boolean()
           }
     defstruct socket: nil,
               servers: [],
+              sync_handlers: [],
               daemon: nil,
               synchronized?: false,
               clean_start?: true
@@ -87,6 +89,16 @@ defmodule NervesTime.Ntpd do
     GenServer.call(__MODULE__, :restart_ntpd)
   end
 
+
+  @doc """
+  add time sync handler function
+  called as `handler_fun.(stratum)` when a network time sync occurs
+  """
+  @spec add_time_sync_handler(fun()) :: :ok | {:error, term()}
+  def add_time_sync_handler(handler_fun) do
+    GenServer.call(__MODULE__, {:add_time_sync_handler, handler_fun})
+  end
+
   @impl true
   def init(_args) do
     ntp_servers = Application.get_env(:nerves_time, :servers, @default_ntp_servers)
@@ -115,6 +127,12 @@ defmodule NervesTime.Ntpd do
 
     {:reply, :ok, new_state}
   end
+
+  @impl true
+  def handle_call({:add_time_sync_handler, handler_fun}, _from, state = %State{sync_handlers: handlers}) do
+    {:reply, :ok, %State{state | sync_handlers: [handler_fun | handlers]}}
+  end
+
 
   @impl true
   def handle_call(:ntp_servers, _from, %State{servers: servers} = state) do
@@ -193,13 +211,13 @@ defmodule NervesTime.Ntpd do
   end
 
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    synchronized = maybe_update_hwclock(stratum)
+    synchronized = handle_time_sync(stratum, state)
 
     {:noreply, %{state | synchronized?: synchronized}}
   end
 
   defp handle_ntpd_report({"periodic", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    synchronized = maybe_update_hwclock(stratum)
+    synchronized = handle_time_sync(stratum, state)
 
     {:noreply, %{state | synchronized?: synchronized}}
   end
@@ -251,8 +269,11 @@ defmodule NervesTime.Ntpd do
     %{state | daemon: pid, synchronized?: false}
   end
 
-  defp maybe_update_hwclock(stratum) when stratum <= 4 do
-    # Future: update an RTC now that we have time from a decent clock
+  defp handle_time_sync(stratum, state = %State{sync_handlers: handlers}) when stratum <= 4 do
+    # call configured time update handlers, eg. RTCs via add_time_sync_handler
+    for handler <- handlers do
+      handler.(stratum)
+    end
 
     # Note: the Busybox ntpd source waits for poll_interval to be >=128. This
     #       actually takes a little while.
@@ -262,7 +283,7 @@ defmodule NervesTime.Ntpd do
     true
   end
 
-  defp maybe_update_hwclock(_result), do: false
+  defp handle_time_sync(_result, _state), do: false
 
   defp socket_path() do
     Path.join(System.tmp_dir!(), "nerves_time_comm")

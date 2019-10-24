@@ -67,6 +67,13 @@ defmodule NervesTime do
   defdelegate ntp_servers(), to: NervesTime.Ntpd
 
   @doc """
+  Set tune sync handler
+  """
+  @spec add_time_sync_handler(fun()) :: :ok | {:error, term()}
+  defdelegate add_time_sync_handler(handler_fun), to: NervesTime.Ntpd
+
+
+  @doc """
   Manually restart the NTP daemon
 
   This is normally not necessary since `NervesTime` handles restarting it
