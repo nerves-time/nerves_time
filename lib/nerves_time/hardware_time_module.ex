@@ -1,4 +1,4 @@
-defmodule NervesTime.HardwareTimeHandler do
+defmodule NervesTime.HardwareTimeModule do
   @moduledoc """
   Nerves Hardware Time Handler behaviour.
 

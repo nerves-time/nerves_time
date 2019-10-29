@@ -16,16 +16,20 @@ defmodule NervesTime.Application do
     Supervisor.start_link(children, opts)
   end
 
-  def stop(%{timestamp_handler: timestamp_handler, timestamp_state: state}) do
+  def stop(_state) do
     # Update the file that keeps track of the time one last time.
     NervesTime.FileTime.update()
   end
 
   defp adjust_clock() do
-    file_time = NervesTime.FileTime.time()
+    # Get time from hardware store (or file backup)
+    hardware_time_module =
+      Application.get_env(:nerves_time, :hardware_time_module, NervesTime.FileTime)
+    hardware_time = hardware_time_module.time()
+
     now = NaiveDateTime.utc_now()
 
-    case NervesTime.SaneTime.derive_time(now, file_time) do
+    case NervesTime.SaneTime.derive_time(now, hardware_time) do
       ^now ->
         # No change to the current time. This means that we either have a
         # real-time clock that sets the time or the default time that was
