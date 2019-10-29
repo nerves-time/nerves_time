@@ -11,7 +11,7 @@ defmodule NervesTime.MixProject do
       elixir: "~> 1.7",
       description: description(),
       package: package(),
-      source_url: @source_url,
+      # source_url: @source_url,
       compilers: [:elixir_make | Mix.compilers()],
       make_targets: ["all"],
       make_clean: ["clean"],
