@@ -9,7 +9,7 @@ defmodule NervesTime.FileTime do
   Update the file holding a stamp of the current time.
   """
   @spec update( ) :: :ok | {:error, File.posix()}
-  def update( _naive_dt_time ) do
+  def update( ) do
     File.touch(time_file())
   end
 
