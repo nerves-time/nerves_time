@@ -40,7 +40,7 @@ defmodule NervesTime.Application do
     end
   end
 
-  defp set_time(%NaiveDateTime{} = time) do
+  def set_time(%NaiveDateTime{} = time) do
     string_time = time |> NaiveDateTime.truncate(:second) |> NaiveDateTime.to_string()
 
     case System.cmd("date", ["-u", "-s", string_time]) do
