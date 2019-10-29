@@ -1,4 +1,6 @@
 defmodule NervesTime.HardwareTimeModule do
+  require Logger
+
   @moduledoc """
   Nerves Hardware Time Handler behaviour.
 
@@ -26,14 +28,28 @@ defmodule NervesTime.HardwareTimeModule do
 
   @spec time() :: NaiveDateTime.t()
   def time() do
-    case module().retrieve_time() do
-      :error -> ~N[1970-01-01 00:00:00]
-      %NaiveDateTime{} = dt -> dt
+    try do
+      case module().retrieve_time() do
+        :error ->
+          ~N[1970-01-01 00:00:00]
+        %NaiveDateTime{} = dt ->
+          dt
+      end
+    rescue
+      e ->
+        Logger.error("Unexpected error retrieving HW Time: #{inspect e}")
+        ~N[1970-01-01 00:00:00]
     end
   end
 
-  @spec update( ) :: :ok | {:error, term()}
+  @spec update( ) :: :ok | :error
   def update() do
-    module().update_time()
+    try do
+      module().update_time()
+    rescue
+      e ->
+        Logger.error("Unexpected error setting HW Time: #{inspect e}")
+        :error
+    end
   end
 end
