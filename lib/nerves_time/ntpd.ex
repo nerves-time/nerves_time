@@ -251,7 +251,7 @@ defmodule NervesTime.Ntpd do
   end
 
   defp maybe_update_hwclock(stratum) when stratum <= 4 do
-    # Future: update an RTC now that we have time from a decent clock
+    # Update an RTC now that we have time from a decent clock
 
     # Note: the Busybox ntpd source waits for poll_interval to be >=128. This
     #       actually takes a little while.
