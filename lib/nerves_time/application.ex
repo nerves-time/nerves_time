@@ -1,4 +1,4 @@
-defmodule Nerves.Time.Application do
+defmodule NervesTime.Application do
   @moduledoc false
   require Logger
   use Application
@@ -10,28 +10,45 @@ defmodule Nerves.Time.Application do
     {:ok, state} = apply(timestamp_handler, :init, [])
 
     children = [
+<<<<<<< HEAD
       {Nerves.Time.Ntpd, [timestamp_handler: timestamp_handler, timestamp_state: state]}
+=======
+      {NervesTime.Ntpd, []}
+>>>>>>> master
     ]
 
     # Sanity check and adjust the clock
     adjust_clock(timestamp_handler, state)
 
+<<<<<<< HEAD
     opts = [strategy: :one_for_one, name: Nerves.Time.Supervisor]
     {:ok, pid} = Supervisor.start_link(children, opts)
 
     {:ok, pid, %{timestamp_handler: timestamp_handler, timestamp_state: state}}
+=======
+    opts = [strategy: :one_for_one, name: NervesTime.Supervisor]
+    Supervisor.start_link(children, opts)
+>>>>>>> master
   end
 
   def stop(%{timestamp_handler: timestamp_handler, timestamp_state: state}) do
     # Update the file that keeps track of the time one last time.
+<<<<<<< HEAD
     apply(timestamp_handler, :update, [state])
   end
 
   defp adjust_clock(timestamp_handler, state) do
     file_time = apply(timestamp_handler, :time, [state])
+=======
+    NervesTime.FileTime.update()
+  end
+
+  defp adjust_clock() do
+    file_time = NervesTime.FileTime.time()
+>>>>>>> master
     now = NaiveDateTime.utc_now()
 
-    case Nerves.Time.SaneTime.derive_time(now, file_time) do
+    case NervesTime.SaneTime.derive_time(now, file_time) do
       ^now ->
         # No change to the current time. This means that we either have a
         # real-time clock that sets the time or the default time that was
@@ -49,13 +66,14 @@ defmodule Nerves.Time.Application do
 
     case System.cmd("date", ["-u", "-s", string_time]) do
       {_result, 0} ->
-        Logger.info("nerves_time initialized clock to #{string_time} UTC")
+        _ = Logger.info("nerves_time initialized clock to #{string_time} UTC")
         :ok
 
       {message, code} ->
-        Logger.error(
-          "nerves_time failed to set date/time to '#{string_time}': #{code} #{inspect(message)}"
-        )
+        _ =
+          Logger.error(
+            "nerves_time failed to set date/time to '#{string_time}': #{code} #{inspect(message)}"
+          )
 
         :error
     end

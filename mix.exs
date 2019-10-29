@@ -1,26 +1,35 @@
-defmodule Nerves.Time.MixProject do
+defmodule NervesTime.MixProject do
   use Mix.Project
+
+  @version "0.3.2"
+  @source_url "https://github.com/fhunleth/nerves_time"
 
   def project do
     [
       app: :nerves_time,
-      version: "0.2.0",
-      elixir: "~> 1.6",
-      start_permanent: Mix.env() == :prod,
-      compilers: [:elixir_make | Mix.compilers()],
-      make_clean: ["clean"],
-      deps: deps(),
-      docs: [extras: ["README.md"]],
+      version: @version,
+      elixir: "~> 1.7",
       description: description(),
-      package: package()
+      package: package(),
+      source_url: @source_url,
+      compilers: [:elixir_make | Mix.compilers()],
+      make_targets: ["all"],
+      make_clean: ["clean"],
+      make_error_message: "",
+      docs: docs(),
+      start_permanent: Mix.env() == :prod,
+      build_embedded: true,
+      dialyzer: [
+        flags: [:unmatched_returns, :error_handling, :race_conditions, :underspecs]
+      ],
+      deps: deps()
     ]
   end
 
-  # Run "mix help compile.app" to learn about applications.
   def application do
     [
       extra_applications: [:logger],
-      mod: {Nerves.Time.Application, []}
+      mod: {NervesTime.Application, []}
     ]
   end
 
@@ -29,7 +38,7 @@ defmodule Nerves.Time.MixProject do
   end
 
   defp package do
-    [
+    %{
       files: [
         "lib",
         "src/*.[ch]",
@@ -40,18 +49,26 @@ defmodule Nerves.Time.MixProject do
         "CHANGELOG.md",
         "Makefile"
       ],
-      maintainers: ["Frank Hunleth"],
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => "https://github.com/fhunleth/nerves_time"}
-    ]
+      links: %{"GitHub" => @source_url}
+    }
   end
 
   defp deps do
     [
-      {:muontrap, "~> 0.4"},
-      {:elixir_make, "~> 0.4", runtime: false},
+      {:muontrap, "~> 0.5"},
+      {:elixir_make, "~> 0.6", runtime: false},
       {:ex_doc, "~> 0.19", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.3", only: [:dev, :test], runtime: false}
+      {:dialyxir, "~> 1.0.0-rc.6", only: [:dev, :test], runtime: false}
+    ]
+  end
+
+  defp docs do
+    [
+      extras: ["README.md"],
+      main: "readme",
+      source_ref: "v#{@version}",
+      source_url: @source_url
     ]
   end
 end

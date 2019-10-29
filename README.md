@@ -3,7 +3,7 @@
 [![CircleCI](https://circleci.com/gh/fhunleth/nerves_time.svg?style=svg)](https://circleci.com/gh/fhunleth/nerves_time)
 [![Hex version](https://img.shields.io/hexpm/v/nerves_time.svg "Hex version")](https://hex.pm/packages/nerves_time)
 
-`Nerves.Time` keeps the system clock on [Nerves](http://nerves-project.org)
+`NervesTime` keeps the system clock on [Nerves](http://nerves-project.org)
 devices in sync when connected to the network and close to in sync when
 disconnected. It's especially useful for devices lacking a [Battery-backed
 real-time clock](https://en.wikipedia.org/wiki/Real-time_clock) and will advance
@@ -16,9 +16,19 @@ First add `nerves_time` to your project's dependencies:
 ```elixir
 def deps do
   [
-    {:nerves_time, "~> 0.2"}
+    {:nerves_time, "~> 0.3.0"}
   ]
 end
+```
+
+Ensure that your `vm.args` allows for
+[timewarps](http://erlang.org/doc/apps/erts/time_correction.html#time-warp-modes).
+If it doesn't, `nerves_time` will update the OS system time, but Erlang's system
+time will lag. The following line should be in the beginning or middle of the
+`vm.args` file:
+
+```elixir
++C multi_time_warp
 ```
 
 If you're using one of the official Nerves Systems, then this is all that's
@@ -44,14 +54,29 @@ config :nerves_time, :servers, [
 ```
 
 It's also possible to configure NTP servers at runtime. See
-`Nerves.Time.set_ntp_servers/1`.
+`NervesTime.set_ntp_servers/1`.
+
+`nerves_time` also has a concept of a valid time range. This minimizes time
+errors on systems without clocks or Internet connections or that may have some
+issue that causes a very wrong time value. The default valid time range is
+hardcoded and moves forward each release. It is not the build timestamp since
+that results in [non-reproducible builds](https://reproducible-builds.org).
+Applications can override the valid range via the application config:
+
+```elixir
+# config/config.exs
+
+config :nerves_time, earliest_time: ~N[2019-10-04 00:00:00], latest_time: ~N[2022-01-01 00:00:00]
+```
 
 ## Algorithm
 
 Here's the basic idea behind `nerves_time`:
 
-* If the clock hasn't been set or is invalid, set it to the time that
-  `nerves_time` was compiled.
+* If the clock hasn't been set or is invalid, set it to the earliest valid
+  time known to `nerves_time`. This is either set in the application config or
+  defaulted to a reasonable value that likely moves forward a little each
+  `nerves_time` release.
 * Check for `~/.nerves_time`. If it exists, advance the clock to it's last
   modification time.
 * Run Busybox `ntpd` to synchronize time using the [NTP
@@ -60,7 +85,7 @@ Here's the basic idea behind `nerves_time`:
   currently only done at around 11 minute intervals to avoid needless exercising
   of Flash-based memory.
 
-To check the NTP synchronization status, call `Nerves.Time.synchronized?/0`.
+To check the NTP synchronization status, call `NervesTime.synchronized?/0`.
 
 ## Credits and license
 
