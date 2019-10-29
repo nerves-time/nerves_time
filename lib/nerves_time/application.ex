@@ -18,18 +18,16 @@ defmodule NervesTime.Application do
 
   def stop(_state) do
     # Update the file that keeps track of the time one last time.
-    NervesTime.FileTime.update()
+    NervesTime.HardwareTimeModule.update()
   end
 
   defp adjust_clock() do
     # Get time from hardware store (or file backup)
-    hardware_time_module =
-      Application.get_env(:nerves_time, :hardware_time_module, NervesTime.FileTime)
-    hardware_time = hardware_time_module.time()
+    hwtime = NervesTime.HardwareTimeModule.time()
 
     now = NaiveDateTime.utc_now()
 
-    case NervesTime.SaneTime.derive_time(now, hardware_time) do
+    case NervesTime.SaneTime.derive_time(now, hwtime) do
       ^now ->
         # No change to the current time. This means that we either have a
         # real-time clock that sets the time or the default time that was

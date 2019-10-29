@@ -8,23 +8,26 @@ defmodule NervesTime.FileTime do
   @doc """
   Update the file holding a stamp of the current time.
   """
-  @spec update( ) :: :ok | {:error, File.posix()}
-  def update( ) do
-    File.touch(time_file())
+  @spec update_time( ) :: :ok | :error
+  def update_time( ) do
+    case File.touch(time_file()) do
+      :ok -> :ok
+      {:error, _err} -> :error
+    end
   end
 
   @doc """
   Return the timestamp of when update was last called or
   the Unix epoch time (1970-01-01) should that not work.
   """
-  @spec time() :: NaiveDateTime.t()
-  def time() do
+  @spec retrieve_time() :: NaiveDateTime.t() | :error
+  def retrieve_time() do
     case File.stat(time_file()) do
       {:ok, stat} ->
         NaiveDateTime.from_erl!(stat.mtime)
 
       _error ->
-        ~N[1970-01-01 00:00:00]
+        :error
     end
   end
 

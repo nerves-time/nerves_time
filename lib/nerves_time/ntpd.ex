@@ -1,6 +1,5 @@
 defmodule NervesTime.Ntpd do
   use GenServer
-  alias Nerves.Time.NtpdParser
   require Logger
 
   @moduledoc false
@@ -258,7 +257,8 @@ defmodule NervesTime.Ntpd do
     #       actually takes a little while.
 
     # Bump the hardware time module (or fallback to the FileTime backup)
-    hardware_time_module = Application.get_env(:nerves_time, :hardware_time_module, NervesTime.FileTime)
+    hardware_time_module =
+      Application.get_env(:nerves_time, :hardware_time_module, NervesTime.FileTime)
 
     hardware_time_module.update()
 
