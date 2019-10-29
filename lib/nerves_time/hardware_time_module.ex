@@ -17,7 +17,7 @@ defmodule NervesTime.HardwareTimeModule do
   @doc """
   Store current time.
   """
-  @callback update_time( ) :: :ok | :error
+  @callback update_time() :: :ok | :error
 
   @spec module() :: Module.t()
   defp module() do

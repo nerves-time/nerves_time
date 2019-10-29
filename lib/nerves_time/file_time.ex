@@ -8,7 +8,7 @@ defmodule NervesTime.FileTime do
   @doc """
   Update the file holding a stamp of the current time.
   """
-  @spec update_time( ) :: :ok | :error
+  @spec update_time() :: :ok | :error
   def update_time( ) do
     case File.touch(time_file()) do
       :ok -> :ok
