@@ -310,6 +310,9 @@ defmodule NervesTime.Ntpd do
         new_time ->
           set_system_time(new_time)
       end
+    else
+      {:error, _} ->
+        state.rtc.update(state.rtc_state)
     end
   end
 

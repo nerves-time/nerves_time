@@ -25,14 +25,11 @@ defmodule NervesTime.FileTime do
   the Unix epoch time (1970-01-01) should that not work.
   """
   @impl NervesTime.RealTimeClock
-  @spec time(state) :: NaiveDateTime.t()
+  @spec time(state) :: {:ok, NaiveDateTime.t()} | {:error, any()}
   def time(_state) do
-    case File.stat(time_file()) do
-      {:ok, stat} ->
-        NaiveDateTime.from_erl!(stat.mtime)
-
-      _error ->
-        ~N[1970-01-01 00:00:00]
+    with {:ok, stat} <- File.stat(time_file()),
+         {:ok, %NaiveDateTime{} = mtime} <- NaiveDateTime.from_erl(stat.mtime) do
+      {:ok, mtime}
     end
   end
 

@@ -77,15 +77,28 @@ Here's the basic idea behind `nerves_time`:
   time known to `nerves_time`. This is either set in the application config or
   defaulted to a reasonable value that likely moves forward a little each
   `nerves_time` release.
-* Check for `~/.nerves_time`. If it exists, advance the clock to it's last
-  modification time.
+* check for time via a [Real Time Clock](#Real-Time-Clock)
 * Run Busybox `ntpd` to synchronize time using the [NTP
   protocol](https://en.wikipedia.org/wiki/Network_Time_Protocol).
-* Update `~/.nerves_time` periodically and on graceful power downs. This is
-  currently only done at around 11 minute intervals to avoid needless exercising
-  of Flash-based memory.
+* Update [Real Time Clock](#Real-Time-Clock) periodically and on graceful power 
+  downs. This is currently only done at around 11 minute intervals.
 
 To check the NTP synchronization status, call `NervesTime.synchronized?/0`.
+
+## Real Time Clock
+
+A hardware based real time clock can be configured by added a config.exs entry:
+
+```elixir
+config :nerves_time, rtc: {SomeImplementingModule, [some: :initialization_opt]}
+```
+
+By default Nerves Time is configured to use `NervesTime.FileTime` which will
+Check for `~/.nerves_time`. If it exists, advance the clock to it's last 
+modification time.
+
+See the documentation for `NervesTime.RealTimeClock` to implement your own
+real time clock. 
 
 ## Credits and license
 
