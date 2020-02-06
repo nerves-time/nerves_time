@@ -1,6 +1,5 @@
 defmodule NervesTime.Ntpd do
   use GenServer
-  alias NervesTime.FileTime
   require Logger
 
   @moduledoc false
@@ -22,6 +21,8 @@ defmodule NervesTime.Ntpd do
     "3.pool.ntp.org"
   ]
 
+  @default_rtc {NervesTime.FileTime, []}
+
   defmodule State do
     @moduledoc false
     @type t() :: %__MODULE__{
@@ -29,13 +30,17 @@ defmodule NervesTime.Ntpd do
             servers: [String.t()],
             daemon: nil | pid(),
             synchronized?: boolean(),
-            clean_start?: boolean()
+            clean_start?: boolean(),
+            rtc: module(),
+            rtc_state: term()
           }
     defstruct socket: nil,
               servers: [],
               daemon: nil,
               synchronized?: false,
-              clean_start?: true
+              clean_start?: true,
+              rtc: nil,
+              rtc_state: nil
   end
 
   @spec start_link(any()) :: GenServer.on_start()
@@ -89,14 +94,28 @@ defmodule NervesTime.Ntpd do
 
   @impl true
   def init(_args) do
-    ntp_servers = Application.get_env(:nerves_time, :servers, @default_ntp_servers)
+    app_env = Application.get_all_env(:nerves_time)
+    ntp_servers = Keyword.get(app_env, :servers, @default_ntp_servers)
+    {rtc, rtc_args} = Keyword.get(app_env, :rtc, @default_rtc)
 
     state =
-      %State{servers: ntp_servers}
+      %State{servers: ntp_servers, rtc: rtc}
       |> prep_ntpd_start()
       |> schedule_ntpd_start()
 
-    {:ok, state}
+    case init_rtc(state, rtc_args) do
+      {:ok, state} ->
+        _ = adjust_system_time(state)
+        {:ok, state}
+
+      {:error, reason} ->
+        {:stop, reason}
+    end
+  end
+
+  @impl true
+  def terminate(_, state) do
+    _ = adjust_system_time(state)
   end
 
   @impl true
@@ -193,15 +212,15 @@ defmodule NervesTime.Ntpd do
   end
 
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    synchronized = maybe_update_hwclock(stratum)
+    state = maybe_update_rtc(state, stratum)
 
-    {:noreply, %{state | synchronized?: synchronized}}
+    {:noreply, state}
   end
 
   defp handle_ntpd_report({"periodic", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    synchronized = maybe_update_hwclock(stratum)
+    state = maybe_update_rtc(state, stratum)
 
-    {:noreply, %{state | synchronized?: synchronized}}
+    {:noreply, state}
   end
 
   defp handle_ntpd_report({"step", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
@@ -251,18 +270,66 @@ defmodule NervesTime.Ntpd do
     %{state | daemon: pid, synchronized?: false}
   end
 
-  defp maybe_update_hwclock(stratum) when stratum <= 4 do
-    # Future: update an RTC now that we have time from a decent clock
+  @spec init_rtc(State.t(), args :: any()) :: {:ok, State.t()} | {:error, reason :: any()}
+  def init_rtc(state, args) do
+    case state.rtc.init(args) do
+      {:ok, rtc_state} ->
+        {:ok, %{state | rtc_state: rtc_state}}
 
-    # Note: the Busybox ntpd source waits for poll_interval to be >=128. This
-    #       actually takes a little while.
-
-    # Bump the file time for the no-RTC case.
-    _ = FileTime.update()
-    true
+      {:error, reason} ->
+        {:error, reason}
+    end
   end
 
-  defp maybe_update_hwclock(_result), do: false
+  @spec maybe_update_rtc(State.t(), integer()) :: State.t()
+  defp maybe_update_rtc(state, stratum) when stratum <= 4 do
+    case state.rtc.update(state.rtc_state) do
+      :ok ->
+        %{state | synchronized?: true}
+
+      {:error, _} ->
+        %{state | synchronized?: false}
+    end
+  end
+
+  defp maybe_update_rtc(state, _result), do: %{state | synchronized?: false}
+
+  @spec adjust_system_time(State.t()) :: :ok | :error
+  defp adjust_system_time(%State{} = state) do
+    now = NaiveDateTime.utc_now()
+
+    with {:ok, %NaiveDateTime{} = time} <- state.rtc.time(state.rtc_state) do
+      case NervesTime.SaneTime.derive_time(now, time) do
+        ^now ->
+          # No change to the current time. This means that we either have a
+          # real-time clock that sets the time or the default time that was
+          # set is better than any knowledge that we have to say that it's
+          # wrong.
+          :ok
+
+        new_time ->
+          set_system_time(new_time)
+      end
+    end
+  end
+
+  defp set_system_time(%NaiveDateTime{} = time) do
+    string_time = time |> NaiveDateTime.truncate(:second) |> NaiveDateTime.to_string()
+
+    case System.cmd("date", ["-u", "-s", string_time]) do
+      {_result, 0} ->
+        _ = Logger.info("nerves_time initialized clock to #{string_time} UTC")
+        :ok
+
+      {message, code} ->
+        _ =
+          Logger.error(
+            "nerves_time failed to set date/time to '#{string_time}': #{code} #{inspect(message)}"
+          )
+
+        :error
+    end
+  end
 
   defp socket_path() do
     Path.join(System.tmp_dir!(), "nerves_time_comm")
