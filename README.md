@@ -1,6 +1,6 @@
 # nerves_time
 
-[![CircleCI](https://circleci.com/gh/fhunleth/nerves_time.svg?style=svg)](https://circleci.com/gh/fhunleth/nerves_time)
+[![CircleCI](https://circleci.com/gh/nerves-time/nerves_time.svg?style=svg)](https://circleci.com/gh/nerves-time/nerves_time)
 [![Hex version](https://img.shields.io/hexpm/v/nerves_time.svg "Hex version")](https://hex.pm/packages/nerves_time)
 
 `NervesTime` keeps the system clock on [Nerves](http://nerves-project.org)
@@ -80,7 +80,7 @@ Here's the basic idea behind `nerves_time`:
 * check for time via a [Real Time Clock](#Real-Time-Clock)
 * Run Busybox `ntpd` to synchronize time using the [NTP
   protocol](https://en.wikipedia.org/wiki/Network_Time_Protocol).
-* Update [Real Time Clock](#Real-Time-Clock) periodically and on graceful power 
+* Update [Real Time Clock](#Real-Time-Clock) periodically and on graceful power
   downs. This is currently only done at around 11 minute intervals.
 
 To check the NTP synchronization status, call `NervesTime.synchronized?/0`.
@@ -94,11 +94,11 @@ config :nerves_time, rtc: {SomeImplementingModule, [some: :initialization_opt]}
 ```
 
 By default Nerves Time is configured to use `NervesTime.FileTime` which will
-Check for `~/.nerves_time`. If it exists, advance the clock to it's last 
+Check for `~/.nerves_time`. If it exists, advance the clock to it's last
 modification time.
 
 See the documentation for `NervesTime.RealTimeClock` to implement your own
-real time clock. 
+real time clock.
 
 ## Credits and license
 

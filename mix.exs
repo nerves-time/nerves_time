@@ -2,7 +2,7 @@ defmodule NervesTime.MixProject do
   use Mix.Project
 
   @version "0.3.2"
-  @source_url "https://github.com/fhunleth/nerves_time"
+  @source_url "https://github.com/nerves-time/nerves_time"
 
   def project do
     [
