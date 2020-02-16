@@ -31,6 +31,7 @@ defmodule NervesTime.Ntpd do
             daemon: nil | pid(),
             synchronized?: boolean(),
             clean_start?: boolean(),
+            rtc_spec: {module(), any()},
             rtc: module(),
             rtc_state: term()
           }
@@ -39,6 +40,7 @@ defmodule NervesTime.Ntpd do
               daemon: nil,
               synchronized?: false,
               clean_start?: true,
+              rtc_spec: nil,
               rtc: nil,
               rtc_state: nil
   end
@@ -96,21 +98,34 @@ defmodule NervesTime.Ntpd do
   def init(_args) do
     app_env = Application.get_all_env(:nerves_time)
     ntp_servers = Keyword.get(app_env, :servers, @default_ntp_servers)
-    {rtc, rtc_args} = Keyword.get(app_env, :rtc, @default_rtc)
+    rtc_spec = Keyword.get(app_env, :rtc) |> normalize_rtc_spec()
 
-    state =
-      %State{servers: ntp_servers, rtc: rtc}
+    {:ok, %State{servers: ntp_servers, rtc_spec: rtc_spec}, {:continue, :continue}}
+  end
+
+  defp normalize_rtc_spec({module, args} = rtc_spec)
+       when is_atom(module) and not is_nil(module) and is_list(args),
+       do: rtc_spec
+
+  defp normalize_rtc_spec(nil), do: @default_rtc
+
+  defp normalize_rtc_spec(module) when is_atom(module), do: {module, []}
+
+  defp normalize_rtc_spec(other) do
+    _ = Logger.error("Bad rtc spec '#{inspect(other)}. Reverting to '#{inspect(@default_rtc)}'")
+    @default_rtc
+  end
+
+  @impl true
+  def handle_continue(:continue, state) do
+    new_state =
+      state
+      |> init_rtc()
+      |> adjust_system_time()
       |> prep_ntpd_start()
       |> schedule_ntpd_start()
 
-    case init_rtc(state, rtc_args) do
-      {:ok, state} ->
-        _ = adjust_system_time(state)
-        {:ok, state}
-
-      {:error, reason} ->
-        {:stop, reason}
-    end
+    {:noreply, new_state}
   end
 
   @impl true
@@ -270,20 +285,31 @@ defmodule NervesTime.Ntpd do
     %{state | daemon: pid, synchronized?: false}
   end
 
-  @spec init_rtc(State.t(), args :: any()) :: {:ok, State.t()} | {:error, reason :: any()}
-  def init_rtc(state, args) do
-    case state.rtc.init(args) do
+  defp init_rtc(state) do
+    {rtc_module, rtc_arg} = state.rtc_spec
+
+    case apply(rtc_module, :init, [rtc_arg]) do
       {:ok, rtc_state} ->
-        {:ok, %{state | rtc_state: rtc_state}}
+        %{state | rtc: rtc_module, rtc_state: rtc_state}
 
       {:error, reason} ->
-        {:error, reason}
+        _ = Logger.error("Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(reason)}")
+        state
     end
+  catch
+    what, why ->
+      _ =
+        Logger.error(
+          "Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(what)}, #{inspect(why)}"
+        )
+
+      state
   end
 
   @spec maybe_update_rtc(State.t(), integer()) :: State.t()
-  defp maybe_update_rtc(state, stratum) when stratum <= 4 do
-    case state.rtc.update(state.rtc_state) do
+  defp maybe_update_rtc(%State{rtc: rtc} = state, stratum)
+       when stratum <= 4 and not is_nil(rtc) do
+    case rtc.update(state.rtc_state) do
       :ok ->
         %{state | synchronized?: true}
 
@@ -294,26 +320,54 @@ defmodule NervesTime.Ntpd do
 
   defp maybe_update_rtc(state, _result), do: %{state | synchronized?: false}
 
-  @spec adjust_system_time(State.t()) :: :ok | :error
-  defp adjust_system_time(%State{} = state) do
-    now = NaiveDateTime.utc_now()
+  @spec adjust_system_time(State.t()) :: State.t()
+  defp adjust_system_time(%State{rtc: rtc} = state) when not is_nil(rtc) do
+    system_time = NaiveDateTime.utc_now()
 
-    with {:ok, %NaiveDateTime{} = time} <- state.rtc.time(state.rtc_state) do
-      case NervesTime.SaneTime.derive_time(now, time) do
-        ^now ->
-          # No change to the current time. This means that we either have a
-          # real-time clock that sets the time or the default time that was
-          # set is better than any knowledge that we have to say that it's
+    with {:ok, %NaiveDateTime{} = rtc_time} <- rtc.time(state.rtc_state) do
+      case NervesTime.SaneTime.derive_time(system_time, rtc_time) do
+        ^system_time ->
+          # No change to the system time. This means that we either have a
+          # real-time clock that already set it or the default time
+          # is better than any knowledge that we have to say that it's
           # wrong.
           :ok
 
         new_time ->
           set_system_time(new_time)
+
+          # If the RTC is off by more than an hour, then update it.
+          # Otherwise, wait for NTP to give it a better time
+          rtc_delta =
+            NaiveDateTime.diff(rtc_time, system_time, :second)
+            |> div(3600)
+
+          if rtc_delta != 0, do: rtc.update(state.rtc_state)
       end
     else
       {:error, _} ->
-        state.rtc.update(state.rtc_state)
+        # Try to fix an unset or corrupt RTC
+        rtc.update(state.rtc_state)
     end
+
+    state
+  end
+
+  defp adjust_system_time(state) do
+    # No RTC due to an earlier error
+
+    # Fall back to a "sane time" at a minimum
+    now = NaiveDateTime.utc_now()
+
+    case NervesTime.SaneTime.derive_time(now, now) do
+      ^now ->
+        :ok
+
+      new_time ->
+        set_system_time(new_time)
+    end
+
+    state
   end
 
   defp set_system_time(%NaiveDateTime{} = time) do
