@@ -9,19 +9,19 @@ defmodule NervesTime.SaneTime do
 
   @doc """
   Figure out a guess of the real time based on the current system clock (possible_time)
-  and the latest timestamp from FileTime.
+  and the latest timestamp from the RTC.
   """
   @spec derive_time(NaiveDateTime.t(), NaiveDateTime.t()) :: NaiveDateTime.t()
-  def derive_time(possible_time, file_time) do
+  def derive_time(possible_time, rtc_time) do
     # First normalize the input times so that they're in a reasonable time interval
-    sane_file_time = make_sane(file_time)
+    sane_rtc_time = make_sane(rtc_time)
     sane_possible_time = make_sane(possible_time)
 
     # Pick the latest
-    if NaiveDateTime.compare(sane_possible_time, sane_file_time) == :gt do
+    if NaiveDateTime.compare(sane_possible_time, sane_rtc_time) == :gt do
       sane_possible_time
     else
-      sane_file_time
+      sane_rtc_time
     end
   end
 
