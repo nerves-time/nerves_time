@@ -229,18 +229,18 @@ defmodule NervesTime.Ntpd do
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
     state = maybe_update_rtc(state, stratum)
 
-    {:noreply, state}
+    {:noreply, %{state | synchronized?: true}}
   end
 
   defp handle_ntpd_report({"periodic", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
     state = maybe_update_rtc(state, stratum)
 
-    {:noreply, state}
+    {:noreply, %{state | synchronized?: true}}
   end
 
   defp handle_ntpd_report({"step", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
     # Ignore
-    {:noreply, state}
+    {:noreply, %{state | synchronized?: true}}
   end
 
   defp handle_ntpd_report({"unsync", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
@@ -309,48 +309,45 @@ defmodule NervesTime.Ntpd do
   @spec maybe_update_rtc(State.t(), integer()) :: State.t()
   defp maybe_update_rtc(%State{rtc: rtc} = state, stratum)
        when stratum <= 4 and not is_nil(rtc) do
-    case rtc.update(state.rtc_state) do
-      :ok ->
-        %{state | synchronized?: true}
-
-      {:error, _} ->
-        %{state | synchronized?: false}
-    end
+    system_time = NaiveDateTime.utc_now()
+    new_state = rtc.set_time(state.rtc_state, system_time)
+    %{state | rtc_state: new_state}
   end
-
-  defp maybe_update_rtc(state, _result), do: %{state | synchronized?: false}
 
   @spec adjust_system_time(State.t()) :: State.t()
   defp adjust_system_time(%State{rtc: rtc} = state) when not is_nil(rtc) do
     system_time = NaiveDateTime.utc_now()
 
-    with {:ok, %NaiveDateTime{} = rtc_time} <- rtc.time(state.rtc_state) do
-      case NervesTime.SaneTime.derive_time(system_time, rtc_time) do
-        ^system_time ->
-          # No change to the system time. This means that we either have a
-          # real-time clock that already set it or the default time
-          # is better than any knowledge that we have to say that it's
-          # wrong.
-          :ok
+    rtc_state =
+      with {:ok, %NaiveDateTime{} = rtc_time} <- rtc.get_time(state.rtc_state) do
+        case NervesTime.SaneTime.derive_time(system_time, rtc_time) do
+          ^system_time ->
+            # No change to the system time. This means that we either have a
+            # real-time clock that already set it or the default time
+            # is better than any knowledge that we have to say that it's
+            # wrong.
+            state.rtc_state
 
-        new_time ->
-          set_system_time(new_time)
+          new_time ->
+            set_system_time(new_time)
 
-          # If the RTC is off by more than an hour, then update it.
-          # Otherwise, wait for NTP to give it a better time
-          rtc_delta =
-            NaiveDateTime.diff(rtc_time, system_time, :second)
-            |> div(3600)
+            # If the RTC is off by more than an hour, then update it.
+            # Otherwise, wait for NTP to give it a better time
+            rtc_delta =
+              NaiveDateTime.diff(rtc_time, system_time, :second)
+              |> div(3600)
 
-          if rtc_delta != 0, do: rtc.update(state.rtc_state)
+            if rtc_delta != 0,
+              do: rtc.set_time(state.rtc_state, system_time),
+              else: state.rtc_state
+        end
+      else
+        {:error, _} ->
+          # Try to fix an unset or corrupt RTC
+          rtc.set_time(state.rtc_state, system_time)
       end
-    else
-      {:error, _} ->
-        # Try to fix an unset or corrupt RTC
-        rtc.update(state.rtc_state)
-    end
 
-    state
+    %{state | rtc_state: rtc_state}
   end
 
   defp adjust_system_time(state) do
