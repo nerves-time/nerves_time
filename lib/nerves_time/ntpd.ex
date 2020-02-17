@@ -342,9 +342,9 @@ defmodule NervesTime.Ntpd do
               else: state.rtc_state
         end
       else
-        {:error, _} ->
-          # Try to fix an unset or corrupt RTC
-          rtc.set_time(state.rtc_state, system_time)
+        # Try to fix an unset or corrupt RTC
+        {:unavailable, new_rtc_state} ->
+          rtc.set_time(new_rtc_state, system_time)
       end
 
     %{state | rtc_state: rtc_state}
