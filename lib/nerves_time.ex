@@ -29,6 +29,9 @@ defmodule NervesTime do
   `NervesTime` decides that NTP is synchronized when `ntpd` sends a
   notification that the device's clock stratum is 4 or less. Clock adjustments
   occur before this, though.
+
+  Once NTP is synchronized, it will remain that way until the `nerves_time`
+  application is restarted.
   """
   @spec synchronized?() :: boolean()
   defdelegate synchronized?, to: NervesTime.Ntpd
