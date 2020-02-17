@@ -15,9 +15,9 @@ defmodule NervesTime.FileTime do
   Update the file holding a stamp of the current time.
   """
   @impl NervesTime.RealTimeClock
-  @spec update(state) :: :ok | {:error, File.posix()}
-  def update(_state) do
-    File.touch(time_file())
+  def set_time(state, _naive_date_time) do
+    _ = File.touch(time_file())
+    state
   end
 
   @doc """
@@ -25,11 +25,12 @@ defmodule NervesTime.FileTime do
   the Unix epoch time (1970-01-01) should that not work.
   """
   @impl NervesTime.RealTimeClock
-  @spec time(state) :: {:ok, NaiveDateTime.t()} | {:error, any()}
-  def time(_state) do
+  def get_time(state) do
     with {:ok, stat} <- File.stat(time_file()),
          {:ok, %NaiveDateTime{} = mtime} <- NaiveDateTime.from_erl(stat.mtime) do
       {:ok, mtime}
+    else
+      _ -> {:unavailable, state}
     end
   end
 
