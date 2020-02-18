@@ -64,11 +64,16 @@ defmodule NervesTimeTest do
 
   test "delays ntpd restart after a ntpd crash" do
     # Try a run that crashes
-    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd_crash"))
-    Application.start(:nerves_time)
-    Process.sleep(100)
+    log =
+      capture_log(fn ->
+        Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd_crash"))
+        Application.start(:nerves_time)
+        Process.sleep(100)
 
-    refute NervesTime.Ntpd.clean_start?()
+        refute NervesTime.Ntpd.clean_start?()
+      end)
+
+    assert log =~ ~r/fake_busybox_ntpd_crash: Process exited with status 1/
 
     # Restore env.
     Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
