@@ -15,10 +15,6 @@ defmodule NervesTimeTest do
       File.rm(socket_path)
     end)
 
-    on_exit(fn ->
-      nil
-    end)
-
     :ok
   end
 
