@@ -39,6 +39,15 @@ defmodule NervesTimeTest do
     refute NervesTime.synchronized?()
   end
 
+  test "reports that time not synchronized when stratum 16" do
+    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd_stratum16"))
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    refute NervesTime.synchronized?()
+    assert NervesTime.Ntpd.clean_start?()
+  end
+
   test "delays ntpd restart after a GenServer crash" do
     # This one should be clean
     Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))

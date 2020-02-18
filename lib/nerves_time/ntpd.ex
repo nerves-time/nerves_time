@@ -227,20 +227,16 @@ defmodule NervesTime.Ntpd do
   end
 
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    state = maybe_update_rtc(state, stratum)
-
-    {:noreply, %{state | synchronized?: true}}
+    {:noreply, maybe_update_rtc(state, stratum)}
   end
 
   defp handle_ntpd_report({"periodic", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    state = maybe_update_rtc(state, stratum)
-
-    {:noreply, %{state | synchronized?: true}}
+    {:noreply, maybe_update_rtc(state, stratum)}
   end
 
   defp handle_ntpd_report({"step", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
     # Ignore
-    {:noreply, %{state | synchronized?: true}}
+    {:noreply, state}
   end
 
   defp handle_ntpd_report({"unsync", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
@@ -306,13 +302,16 @@ defmodule NervesTime.Ntpd do
       state
   end
 
+  # Only update the RTC if synchronized. I.e., ignore stratum > 4
   @spec maybe_update_rtc(State.t(), integer()) :: State.t()
   defp maybe_update_rtc(%State{rtc: rtc} = state, stratum)
        when stratum <= 4 and not is_nil(rtc) do
     system_time = NaiveDateTime.utc_now()
-    new_state = rtc.set_time(state.rtc_state, system_time)
-    %{state | rtc_state: new_state}
+    new_rtc_state = rtc.set_time(state.rtc_state, system_time)
+    %{state | rtc_state: new_rtc_state, synchronized?: true}
   end
+
+  defp maybe_update_rtc(state, _stratum), do: state
 
   @spec adjust_system_time(State.t()) :: State.t()
   defp adjust_system_time(%State{rtc: rtc} = state) when not is_nil(rtc) do

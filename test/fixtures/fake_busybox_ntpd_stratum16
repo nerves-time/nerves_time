@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# This script simulates what Busybox ntpd prints out on successful runs
+
+while getopts 'ndp:S:' c
+do
+  case $c in
+    S) NTPD_SCRIPT="$OPTARG" ;;
+    *) ;;
+  esac
+done
+
+if [ -z "$NTPD_SCRIPT" ]; then
+  echo "-S not specified!!!" 1>&2
+  exit 1
+fi
+
+# Print the startup messages
+cat <<EOF
+ntpd: '0.pool.ntp.org' is 129.70.132.37
+ntpd: '1.pool.ntp.org' is 193.225.190.6
+ntpd: sending query to 193.225.190.6
+ntpd: sending query to 129.70.132.37
+EOF
+
+while true; do
+    cat <<EOF
+ntpd: reply from 129.70.132.37: offset:-0.007726 delay:0.105911 status:0x24 strat:16 refid:0x46824681 rootdelay:0.000412 reach:0x01
+ntpd: reply from 193.225.190.6: offset:-0.010856 delay:0.119149 status:0x24 strat:16 refid:0x11626fc3 rootdelay:0.004623 reach:0x01
+ntpd: sending query to 193.225.190.6
+ntpd: sending query to 129.70.132.37
+EOF
+    freq_drift_ppm=0 offset=0.190975 stratum=16 poll_interval=1 "$NTPD_SCRIPT" stratum
+    sleep 1
+done
+
