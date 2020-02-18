@@ -363,11 +363,11 @@ defmodule NervesTime.Ntpd do
         # If the RTC is off by more than an hour, then update it.
         # Otherwise, wait for NTP to give it a better time
         rtc_delta =
-          NaiveDateTime.diff(rtc_time, system_time, :second)
+          NaiveDateTime.diff(rtc_time, new_time, :second)
           |> div(3600)
 
         if rtc_delta != 0,
-          do: rtc.set_time(rtc_state, system_time),
+          do: rtc.set_time(rtc_state, new_time),
           else: rtc_state
     end
   end
