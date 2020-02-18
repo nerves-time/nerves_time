@@ -121,16 +121,11 @@ defmodule NervesTime.Ntpd do
     new_state =
       state
       |> init_rtc()
-      |> adjust_system_time()
+      |> set_system_time_from_rtc()
       |> prep_ntpd_start()
       |> schedule_ntpd_start()
 
     {:noreply, new_state}
-  end
-
-  @impl true
-  def terminate(_, state) do
-    _ = adjust_system_time(state)
   end
 
   @impl true
@@ -313,40 +308,46 @@ defmodule NervesTime.Ntpd do
 
   defp maybe_update_rtc(state, _stratum), do: state
 
-  @spec adjust_system_time(State.t()) :: State.t()
-  defp adjust_system_time(%State{rtc: rtc} = state) when not is_nil(rtc) do
+  @spec set_system_time_from_rtc(State.t()) :: State.t()
+  defp set_system_time_from_rtc(%State{rtc: rtc} = state) when not is_nil(rtc) do
     final_rtc_state =
       case rtc.get_time(state.rtc_state) do
         {:ok, %NaiveDateTime{} = rtc_time, next_rtc_state} ->
-          adjust_system_time_to_rtc(rtc, rtc_time, next_rtc_state)
+          check_rtc_time_and_set(rtc, rtc_time, next_rtc_state)
 
         # Try to fix an unset or corrupt RTC
         {:unset, next_rtc_state} ->
-          system_time = NaiveDateTime.utc_now()
-          rtc.set_time(next_rtc_state, system_time)
+          now = sane_system_time()
+          rtc.set_time(next_rtc_state, now)
       end
 
     %{state | rtc_state: final_rtc_state}
   end
 
-  defp adjust_system_time(state) do
+  defp set_system_time_from_rtc(state) do
     # No RTC due to an earlier error
 
     # Fall back to a "sane time" at a minimum
-    now = NaiveDateTime.utc_now()
-
-    case NervesTime.SaneTime.derive_time(now, now) do
-      ^now ->
-        :ok
-
-      new_time ->
-        set_system_time(new_time)
-    end
+    _ = sane_system_time()
 
     state
   end
 
-  defp adjust_system_time_to_rtc(rtc, rtc_time, rtc_state) do
+  defp sane_system_time() do
+    now = NaiveDateTime.utc_now()
+
+    case NervesTime.SaneTime.derive_time(now, now) do
+      ^now ->
+        now
+
+      new_time ->
+        # Side effect: force the system time to be in the sane range
+        set_system_time(new_time)
+        new_time
+    end
+  end
+
+  defp check_rtc_time_and_set(rtc, rtc_time, rtc_state) do
     system_time = NaiveDateTime.utc_now()
 
     case NervesTime.SaneTime.derive_time(system_time, rtc_time) do
