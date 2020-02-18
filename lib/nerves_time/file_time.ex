@@ -28,7 +28,7 @@ defmodule NervesTime.FileTime do
   def get_time(state) do
     with {:ok, stat} <- File.stat(time_file()),
          {:ok, %NaiveDateTime{} = mtime} <- NaiveDateTime.from_erl(stat.mtime) do
-      {:ok, mtime}
+      {:ok, mtime, state}
     else
       _ -> {:unavailable, state}
     end

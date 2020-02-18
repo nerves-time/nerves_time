@@ -316,38 +316,18 @@ defmodule NervesTime.Ntpd do
 
   @spec adjust_system_time(State.t()) :: State.t()
   defp adjust_system_time(%State{rtc: rtc} = state) when not is_nil(rtc) do
-    system_time = NaiveDateTime.utc_now()
+    final_rtc_state =
+      case rtc.get_time(state.rtc_state) do
+        {:ok, %NaiveDateTime{} = rtc_time, next_rtc_state} ->
+          adjust_system_time_to_rtc(rtc, rtc_time, next_rtc_state)
 
-    rtc_state =
-      with {:ok, %NaiveDateTime{} = rtc_time} <- rtc.get_time(state.rtc_state) do
-        case NervesTime.SaneTime.derive_time(system_time, rtc_time) do
-          ^system_time ->
-            # No change to the system time. This means that we either have a
-            # real-time clock that already set it or the default time
-            # is better than any knowledge that we have to say that it's
-            # wrong.
-            state.rtc_state
-
-          new_time ->
-            set_system_time(new_time)
-
-            # If the RTC is off by more than an hour, then update it.
-            # Otherwise, wait for NTP to give it a better time
-            rtc_delta =
-              NaiveDateTime.diff(rtc_time, system_time, :second)
-              |> div(3600)
-
-            if rtc_delta != 0,
-              do: rtc.set_time(state.rtc_state, system_time),
-              else: state.rtc_state
-        end
-      else
         # Try to fix an unset or corrupt RTC
-        {:unavailable, new_rtc_state} ->
-          rtc.set_time(new_rtc_state, system_time)
+        {:unavailable, next_rtc_state} ->
+          system_time = NaiveDateTime.utc_now()
+          rtc.set_time(next_rtc_state, system_time)
       end
 
-    %{state | rtc_state: rtc_state}
+    %{state | rtc_state: final_rtc_state}
   end
 
   defp adjust_system_time(state) do
@@ -365,6 +345,32 @@ defmodule NervesTime.Ntpd do
     end
 
     state
+  end
+
+  defp adjust_system_time_to_rtc(rtc, rtc_time, rtc_state) do
+    system_time = NaiveDateTime.utc_now()
+
+    case NervesTime.SaneTime.derive_time(system_time, rtc_time) do
+      ^system_time ->
+        # No change to the system time. This means that we either have a
+        # real-time clock that already set it or the default time
+        # is better than any knowledge that we have to say that it's
+        # wrong.
+        rtc_state
+
+      new_time ->
+        set_system_time(new_time)
+
+        # If the RTC is off by more than an hour, then update it.
+        # Otherwise, wait for NTP to give it a better time
+        rtc_delta =
+          NaiveDateTime.diff(rtc_time, system_time, :second)
+          |> div(3600)
+
+        if rtc_delta != 0,
+          do: rtc.set_time(rtc_state, system_time),
+          else: rtc_state
+    end
   end
 
   defp set_system_time(%NaiveDateTime{} = time) do
