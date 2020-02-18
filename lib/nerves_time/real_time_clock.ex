@@ -20,11 +20,11 @@ defmodule NervesTime.RealTimeClock do
   This is called after `init/1` returns successfully to see if the
   system clock should be updated.
 
-  If the time isn't available, the implementation should return `unavailable`.
+  If the time isn't set, the implementation should return `:unset`.
   `set_time/2` will be called when the time is known.
   """
   @callback get_time(state()) ::
-              {:ok, NaiveDateTime.t(), state()} | {:unavailable, state()}
+              {:ok, NaiveDateTime.t(), state()} | {:unset, state()}
 
   @doc """
   Set the clock

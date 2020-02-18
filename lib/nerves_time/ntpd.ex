@@ -322,7 +322,7 @@ defmodule NervesTime.Ntpd do
           adjust_system_time_to_rtc(rtc, rtc_time, next_rtc_state)
 
         # Try to fix an unset or corrupt RTC
-        {:unavailable, next_rtc_state} ->
+        {:unset, next_rtc_state} ->
           system_time = NaiveDateTime.utc_now()
           rtc.set_time(next_rtc_state, system_time)
       end

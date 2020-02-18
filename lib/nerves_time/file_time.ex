@@ -30,7 +30,7 @@ defmodule NervesTime.FileTime do
          {:ok, %NaiveDateTime{} = mtime} <- NaiveDateTime.from_erl(stat.mtime) do
       {:ok, mtime, state}
     else
-      _ -> {:unavailable, state}
+      _ -> {:unset, state}
     end
   end
 
