@@ -313,10 +313,12 @@ defmodule NervesTime.Ntpd do
     final_rtc_state =
       case rtc.get_time(state.rtc_state) do
         {:ok, %NaiveDateTime{} = rtc_time, next_rtc_state} ->
+          _ = Logger.info("RTC (#{inspect(rtc)}) reports that the time is #{inspect(rtc_time)}")
           check_rtc_time_and_set(rtc, rtc_time, next_rtc_state)
 
         # Try to fix an unset or corrupt RTC
         {:unset, next_rtc_state} ->
+          _ = Logger.info("RTC (#{inspect(rtc)}) reports that the time hasn't been set.")
           now = sane_system_time()
           rtc.set_time(next_rtc_state, now)
       end
@@ -378,13 +380,13 @@ defmodule NervesTime.Ntpd do
 
     case System.cmd("date", ["-u", "-s", string_time]) do
       {_result, 0} ->
-        _ = Logger.info("nerves_time initialized clock to #{string_time} UTC")
+        _ = Logger.info("nerves_time set system clock to #{string_time} UTC")
         :ok
 
       {message, code} ->
         _ =
           Logger.error(
-            "nerves_time failed to set date/time to '#{string_time}': #{code} #{inspect(message)}"
+            "nerves_time can't set system clock to '#{string_time}': #{code} #{inspect(message)}"
           )
 
         :error
