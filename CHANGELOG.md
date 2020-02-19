@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.4.0
+
+* New features
+  * Added `NervesTime.RealTimeClock` behaviour to support external RTC
+    implementations. The default RTC is still FileTime. I.e., approximate an RTC
+    by periodically updating the modified time on a file and reading it back at
+    boot. See [https://github.com/nerves-time](github.com/nerves-time) for
+    example RTC implementations.
+
+* Bug fixes
+  * `NervesTime.synchronized?/0` will stay true once NTP synchronizes. It will
+    not revert to false unless a crash happens and the NTP code restarts. This
+    should address some confusion, since in practice the function was being used
+    to check whether the system time could be used. Bouncing the answer between
+    true and false depending on ntp reports was confusing since the system time
+    had already been set once and was plenty close to the real time.
+
 ## v0.3.2
 
 * Improvements
