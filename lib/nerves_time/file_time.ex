@@ -2,22 +2,33 @@ defmodule NervesTime.FileTime do
   @default_path ".nerves_time"
   @behaviour NervesTime.RealTimeClock
 
-  @moduledoc false
+  @moduledoc """
+  FileTime simulates a real-time clock using a file's mtime
 
-  @typep state :: any()
+  The way it works is that a file is touched each time nerves_time
+  wants to update the RTC. When nerves_time shuts down, the file is
+  again touched. The next boot then reads the last modified time of
+  the file so that nerves_time can set the clock to that value. It
+  will certainly be off, but not absurdly so unless the device has
+  been powered off for a really long time.
+
+  While this doesn't sound ideal at all, knowing the time within
+  minutes, hours, or days can get the clock to within time ranges
+  needed for X.509 certificate validation.
+  """
 
   @doc false
   @impl NervesTime.RealTimeClock
-  @spec init(args :: any()) :: {:ok, state}
-  def init(args), do: {:ok, args}
+  @spec init(args :: any()) :: {:ok, Path.t()}
+  def init(_args), do: {:ok, time_file()}
 
   @doc """
   Update the file holding a stamp of the current time.
   """
   @impl NervesTime.RealTimeClock
-  def set_time(state, _naive_date_time) do
-    _ = File.touch(time_file())
-    state
+  def set_time(path, _naive_date_time) do
+    _ = File.touch(path)
+    path
   end
 
   @doc """
@@ -25,12 +36,12 @@ defmodule NervesTime.FileTime do
   the Unix epoch time (1970-01-01) should that not work.
   """
   @impl NervesTime.RealTimeClock
-  def get_time(state) do
-    with {:ok, stat} <- File.stat(time_file()),
+  def get_time(path) do
+    with {:ok, stat} <- File.stat(path),
          {:ok, %NaiveDateTime{} = mtime} <- NaiveDateTime.from_erl(stat.mtime) do
-      {:ok, mtime, state}
+      {:ok, mtime, path}
     else
-      _ -> {:unset, state}
+      _ -> {:unset, path}
     end
   end
 
