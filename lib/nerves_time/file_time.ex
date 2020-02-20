@@ -23,6 +23,15 @@ defmodule NervesTime.FileTime do
   def init(_args), do: {:ok, time_file()}
 
   @doc """
+  Update the timestamp one final time
+  """
+  @impl NervesTime.RealTimeClock
+  def terminate(path) do
+    _ = File.touch(path)
+    :ok
+  end
+
+  @doc """
   Update the file holding a stamp of the current time.
   """
   @impl NervesTime.RealTimeClock

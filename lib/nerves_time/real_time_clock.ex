@@ -15,6 +15,15 @@ defmodule NervesTime.RealTimeClock do
   @callback init(args :: any()) :: {:ok, state()} | {:error, reason :: any()}
 
   @doc """
+  Clean up the clock state
+
+  This is called when `nerves_time` terminates. It's not guaranteed to be
+  called, but if it is, it should clean up or do any final operations on
+  the RTC.
+  """
+  @callback terminate(state()) :: :ok
+
+  @doc """
   Get the time from the clock
 
   This is called after `init/1` returns successfully to see if the

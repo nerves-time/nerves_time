@@ -100,6 +100,9 @@ defmodule NervesTime.Ntpd do
     ntp_servers = Keyword.get(app_env, :servers, @default_ntp_servers)
     rtc_spec = Keyword.get(app_env, :rtc) |> normalize_rtc_spec()
 
+    # Trap exits so that it's possible to call RTC.terminate/1
+    Process.flag(:trap_exit, true)
+
     {:ok, %State{servers: ntp_servers, rtc_spec: rtc_spec}, {:continue, :continue}}
   end
 
@@ -179,6 +182,28 @@ defmodule NervesTime.Ntpd do
     handle_ntpd_report(report, state)
   end
 
+  def handle_info({:EXIT, daemon, :normal}, %{daemon: daemon} = state) do
+    # Normal exits for the ntpd daemon pid are initiated by us, so
+    # let them run their course.
+    {:noreply, %{state | daemon: nil}}
+  end
+
+  def handle_info({:EXIT, from, reason}, state) do
+    # Log abnormal exits to aide debugging.
+    _ = Logger.info("NervesTime.Ntpd: unexpected :EXIT #{inspect(from)}/#{inspect(reason)}")
+    {:stop, reason, state}
+  end
+
+  @impl true
+  def terminate(reason, %{rtc: rtc, rtc_state: rtc_state}) do
+    if rtc do
+      _ = Logger.warn("Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
+      rtc.terminate(rtc_state)
+    end
+
+    :ok
+  end
+
   defp prep_ntpd_start(state) do
     path = socket_path()
 
@@ -218,7 +243,7 @@ defmodule NervesTime.Ntpd do
 
   defp stop_ntpd(%State{daemon: pid} = state) do
     GenServer.stop(pid)
-    %State{state | daemon: nil, synchronized?: false}
+    %State{state | synchronized?: false}
   end
 
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
