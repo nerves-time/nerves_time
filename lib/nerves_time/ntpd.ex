@@ -182,10 +182,10 @@ defmodule NervesTime.Ntpd do
     handle_ntpd_report(report, state)
   end
 
-  def handle_info({:EXIT, daemon, :normal}, %{daemon: daemon} = state) do
-    # Normal exits for the ntpd daemon pid are initiated by us, so
-    # let them run their course.
-    {:noreply, %{state | daemon: nil}}
+  def handle_info({:EXIT, _pid, :normal}, state) do
+    # Normal exits come from the ntpd daemon and calls to set the time.
+    # They're initiated by us, so they can be safely ignored.
+    {:noreply, state}
   end
 
   def handle_info({:EXIT, from, reason}, state) do
@@ -243,7 +243,7 @@ defmodule NervesTime.Ntpd do
 
   defp stop_ntpd(%State{daemon: pid} = state) do
     GenServer.stop(pid)
-    %State{state | synchronized?: false}
+    %State{state | daemon: nil, synchronized?: false}
   end
 
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
