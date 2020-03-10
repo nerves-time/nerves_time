@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.1
+
+* Bug fixes
+  * Fix crash when setting time.
+
 ## v0.4.0
 
 * New features
