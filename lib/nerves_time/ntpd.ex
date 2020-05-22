@@ -115,7 +115,7 @@ defmodule NervesTime.Ntpd do
   defp normalize_rtc_spec(module) when is_atom(module), do: {module, []}
 
   defp normalize_rtc_spec(other) do
-    _ = Logger.error("Bad rtc spec '#{inspect(other)}. Reverting to '#{inspect(@default_rtc)}'")
+    Logger.error("Bad rtc spec '#{inspect(other)}. Reverting to '#{inspect(@default_rtc)}'")
     @default_rtc
   end
 
@@ -190,14 +190,14 @@ defmodule NervesTime.Ntpd do
 
   def handle_info({:EXIT, from, reason}, state) do
     # Log abnormal exits to aide debugging.
-    _ = Logger.info("NervesTime.Ntpd: unexpected :EXIT #{inspect(from)}/#{inspect(reason)}")
+    Logger.info("NervesTime.Ntpd: unexpected :EXIT #{inspect(from)}/#{inspect(reason)}")
     {:stop, reason, state}
   end
 
   @impl true
   def terminate(reason, %{rtc: rtc, rtc_state: rtc_state}) do
     if rtc do
-      _ = Logger.warn("Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
+      Logger.warn("Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
       rtc.terminate(rtc_state)
     end
 
@@ -215,7 +215,7 @@ defmodule NervesTime.Ntpd do
           true
 
         :ok ->
-          _ = Logger.warn("ntpd crash detected. Delaying next start...")
+          Logger.warn("ntpd crash detected. Delaying next start...")
           false
       end
 
@@ -226,7 +226,7 @@ defmodule NervesTime.Ntpd do
 
   defp schedule_ntpd_start(%State{servers: []} = state) do
     # Don't schedule ntpd to start if no servers configured.
-    _ = Logger.warn("Not scheduling ntpd to start since no servers configured")
+    Logger.warn("Not scheduling ntpd to start since no servers configured")
     state
   end
 
@@ -260,7 +260,7 @@ defmodule NervesTime.Ntpd do
   end
 
   defp handle_ntpd_report({"unsync", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
-    _ = Logger.error("ntpd reports that it is unsynchronized; restarting")
+    Logger.error("ntpd reports that it is unsynchronized; restarting")
 
     # According to the Busybox ntpd docs, if you get an `unsync` notification, then
     # you should restart ntpd to be safe. This is stated to be due to name resolution
@@ -274,7 +274,7 @@ defmodule NervesTime.Ntpd do
   end
 
   defp handle_ntpd_report(report, state) do
-    _ = Logger.error("ntpd ignored unexpected report #{inspect(report)}")
+    Logger.error("ntpd ignored unexpected report #{inspect(report)}")
     {:noreply, state}
   end
 
@@ -289,7 +289,7 @@ defmodule NervesTime.Ntpd do
     # Add "-d" and enable log_output below for more verbose prints from ntpd.
     args = ["-n", "-S", ntpd_script_path | server_args]
 
-    _ = Logger.debug("Starting #{ntpd_path} with: #{inspect(args)}")
+    Logger.debug("Starting #{ntpd_path} with: #{inspect(args)}")
 
     {:ok, pid} =
       MuonTrap.Daemon.start_link(ntpd_path, args,
@@ -309,15 +309,14 @@ defmodule NervesTime.Ntpd do
         %{state | rtc: rtc_module, rtc_state: rtc_state}
 
       {:error, reason} ->
-        _ = Logger.error("Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(reason)}")
+        Logger.error("Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(reason)}")
         state
     end
   catch
     what, why ->
-      _ =
-        Logger.error(
-          "Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(what)}, #{inspect(why)}"
-        )
+      Logger.error(
+        "Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(what)}, #{inspect(why)}"
+      )
 
       state
   end
@@ -338,12 +337,12 @@ defmodule NervesTime.Ntpd do
     final_rtc_state =
       case rtc.get_time(state.rtc_state) do
         {:ok, %NaiveDateTime{} = rtc_time, next_rtc_state} ->
-          _ = Logger.info("RTC (#{inspect(rtc)}) reports that the time is #{inspect(rtc_time)}")
+          Logger.info("RTC (#{inspect(rtc)}) reports that the time is #{inspect(rtc_time)}")
           check_rtc_time_and_set(rtc, rtc_time, next_rtc_state)
 
         # Try to fix an unset or corrupt RTC
         {:unset, next_rtc_state} ->
-          _ = Logger.info("RTC (#{inspect(rtc)}) reports that the time hasn't been set.")
+          Logger.info("RTC (#{inspect(rtc)}) reports that the time hasn't been set.")
           now = sane_system_time()
           rtc.set_time(next_rtc_state, now)
       end
@@ -405,14 +404,13 @@ defmodule NervesTime.Ntpd do
 
     case System.cmd("date", ["-u", "-s", string_time]) do
       {_result, 0} ->
-        _ = Logger.info("nerves_time set system clock to #{string_time} UTC")
+        Logger.info("nerves_time set system clock to #{string_time} UTC")
         :ok
 
       {message, code} ->
-        _ =
-          Logger.error(
-            "nerves_time can't set system clock to '#{string_time}': #{code} #{inspect(message)}"
-          )
+        Logger.error(
+          "nerves_time can't set system clock to '#{string_time}': #{code} #{inspect(message)}"
+        )
 
         :error
     end
