@@ -95,6 +95,13 @@ defmodule NervesTime.SystemTime do
   end
 
   @impl GenServer
+  def handle_info({:EXIT, _pid, :normal}, state) do
+    # Normal exits come from calls to set the time.
+    # They're initiated by us, so they can be safely ignored.
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def terminate(reason, %{rtc: rtc, rtc_state: rtc_state}) do
     if rtc do
       Logger.warn("Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
