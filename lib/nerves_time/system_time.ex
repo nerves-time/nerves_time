@@ -90,6 +90,11 @@ defmodule NervesTime.SystemTime do
   end
 
   @impl GenServer
+  def handle_call(:update_rtc, _from, state) do
+    {:reply, :ok, state}
+  end
+
+  @impl GenServer
   def terminate(reason, %{rtc: rtc, rtc_state: rtc_state}) do
     if rtc do
       Logger.warn("Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
