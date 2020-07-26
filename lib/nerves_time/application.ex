@@ -5,6 +5,7 @@ defmodule NervesTime.Application do
 
   def start(_type, _args) do
     children = [
+      {NervesTime.SystemTime, []},
       {NervesTime.Ntpd, []}
     ]
 

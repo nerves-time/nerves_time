@@ -23,6 +23,12 @@ defmodule NervesTime do
   """
 
   @doc """
+  Set the system time
+  """
+  @spec set_system_time(NaiveDateTime.t()) :: :ok | :error
+  defdelegate set_system_time(time), to: NervesTime.SystemTime, as: :set_time
+
+  @doc """
   Check whether NTP is synchronized with the configured NTP servers
 
   It's possible that the time is already set correctly when this returns false.
