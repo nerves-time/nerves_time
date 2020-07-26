@@ -22,7 +22,12 @@ defmodule NervesTime.MixProject do
       dialyzer: [
         flags: [:unmatched_returns, :error_handling, :race_conditions, :underspecs]
       ],
-      deps: deps()
+      deps: deps(),
+      preferred_cli_env: %{
+        docs: :docs,
+        "hex.publish": :docs,
+        "hex.build": :docs
+      }
     ]
   end
 
@@ -58,8 +63,8 @@ defmodule NervesTime.MixProject do
     [
       {:muontrap, "~> 0.5"},
       {:elixir_make, "~> 0.6", runtime: false},
-      {:ex_doc, "~> 0.19", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.0.0", only: :dev, runtime: false}
+      {:dialyxir, "~> 1.0.0", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.22", only: :docs, runtime: false}
     ]
   end
 
