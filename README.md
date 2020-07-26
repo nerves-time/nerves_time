@@ -16,7 +16,7 @@ First add `nerves_time` to your project's dependencies:
 ```elixir
 def deps do
   [
-    {:nerves_time, "~> 0.4.1"}
+    {:nerves_time, "~> 0.4.2"}
   ]
 end
 ```

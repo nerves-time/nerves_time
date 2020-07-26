@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.2
+
+* New feature
+  * Added `NervesTime.set_system_time/1` to manually set the system clock.
+    Thanks to Eric Rauer for this.
+
 ## v0.4.1
 
 * Bug fixes

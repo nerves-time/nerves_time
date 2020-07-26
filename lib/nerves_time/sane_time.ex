@@ -2,7 +2,7 @@ defmodule NervesTime.SaneTime do
   # One of the ways that nerves_time determines whether a particular time is
   # possible is whether it's in a known good range.
 
-  @default_earliest_time ~N[2020-05-21 00:00:00]
+  @default_earliest_time ~N[2020-07-25 00:00:00]
   @default_latest_time %{@default_earliest_time | year: @default_earliest_time.year + 20}
 
   @moduledoc false
