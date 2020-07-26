@@ -11,7 +11,7 @@
   * Added `NervesTime.RealTimeClock` behaviour to support external RTC
     implementations. The default RTC is still FileTime. I.e., approximate an RTC
     by periodically updating the modified time on a file and reading it back at
-    boot. See [https://github.com/nerves-time](github.com/nerves-time) for
+    boot. See [github.com/nerves-time](https://github.com/nerves-time) for
     example RTC implementations.
 
 * Bug fixes
