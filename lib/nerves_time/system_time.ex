@@ -48,6 +48,30 @@ defmodule NervesTime.SystemTime do
     GenServer.call(__MODULE__, {:set_time, time})
   end
 
+  @doc """
+  Set the timezone.
+  """
+  def set_timezone(:utc) do
+    timezone_file()
+    |> File.rm()
+  end
+
+  def set_timezone(timezone) do
+    timezone_file()
+    |> File.write(timezone)
+  end
+
+  @doc "Get the timezone. If not set, :utc is the default."
+  def get_timezone() do
+    tz_file = timezone_file()
+
+    if File.exists?(tz_file) do
+      File.read(tz_file)
+    else
+      {:ok, :utc}
+    end
+  end
+
   defp normalize_rtc_spec({module, args} = rtc_spec)
        when is_atom(module) and not is_nil(module) and is_list(args),
        do: rtc_spec
@@ -213,5 +237,11 @@ defmodule NervesTime.SystemTime do
 
         :error
     end
+  end
+
+  defp timezone_file() do
+    tz_file = Application.get_env(:nerves_time, :tz_file)
+    :ok = Path.dirname(tz_file) |> File.mkdir_p!()
+    tz_file
   end
 end

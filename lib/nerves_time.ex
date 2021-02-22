@@ -87,4 +87,17 @@ defmodule NervesTime do
   """
   @spec restart_ntpd() :: :ok | {:error, term()}
   defdelegate restart_ntpd(), to: NervesTime.Ntpd
+
+  @doc """
+  Set the device's timezone so that it can be queried.
+  The name of the zone provided must be acceptable to Tzdata.
+  """
+  @spec set_timezone(String.t() | :utc) :: :ok | {:error, atom()}
+  defdelegate set_timezone(timezone), to: NervesTime.SystemTime
+
+  @doc """
+  Get the device's timezone. If it wasn't set, return :utc
+  """
+  @spec get_timezone() :: {:ok, String.t() | :utc} | {:error, term()}
+  defdelegate get_timezone(), to: NervesTime.SystemTime
 end
