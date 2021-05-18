@@ -33,7 +33,6 @@ jobs:
       - run: mix deps.get
       - run: mix format --check-formatted
       - run: mix deps.unlock --check-unused
-      - run: mix compile --warnings-as-errors
       - run: mix docs
       - run: mix hex.build
       - run: mix test
@@ -64,7 +63,6 @@ jobs:
       - <<: *install_hex_rebar
       - <<: *install_system_deps
       - run: mix deps.get
-      - run: mix compile
       - run: mix test
 
   build_elixir_1_9_otp_22:
@@ -76,7 +74,6 @@ jobs:
       - <<: *install_hex_rebar
       - <<: *install_system_deps
       - run: mix deps.get
-      - run: mix compile
       - run: mix test
 
   build_elixir_1_8_otp_22:
