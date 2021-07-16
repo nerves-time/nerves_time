@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.3
+
+This release only reduces Makefile prints and has no code changes. It is a safe
+update.
+
 ## v0.4.2
 
 * New feature
