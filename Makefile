@@ -43,9 +43,11 @@ install: $(PREFIX) $(BUILD) $(NTPD_SCRIPT)
 $(OBJ): Makefile
 
 $(BUILD)/%.o: src/%.c
+	@echo " CC $(notdir $@)"
 	$(CC) -c $(ERL_CFLAGS) $(CFLAGS) -o $@ $<
 
 $(NTPD_SCRIPT): $(OBJ)
+	@echo " LD $(notdir $@)"
 	$(CC) $^ $(ERL_LDFLAGS) $(LDFLAGS) -o $@
 
 $(PREFIX) $(BUILD):
@@ -69,3 +71,6 @@ format:
 	    src/*.c
 
 .PHONY: all clean calling_from_make install format
+
+# Don't echo commands unless the caller exports "V=1"
+${V}.SILENT:
