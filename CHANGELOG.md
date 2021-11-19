@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.4
+
+* Updates
+  * Allow `muontrap v1.0.0` to be used.
+
 ## v0.4.3
 
 This release only reduces Makefile prints and has no code changes. It is a safe
