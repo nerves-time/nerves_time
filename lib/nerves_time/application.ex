@@ -5,8 +5,9 @@ defmodule NervesTime.Application do
 
   def start(_type, _args) do
     children = [
-      {NervesTime.SystemTime, []},
-      {NervesTime.Ntpd, []}
+      NervesTime.SystemTime,
+      NervesTime.Ntpd,
+      NervesTime.Waiter
     ]
 
     opts = [strategy: :one_for_one, name: NervesTime.Supervisor]

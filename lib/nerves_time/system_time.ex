@@ -68,6 +68,8 @@ defmodule NervesTime.SystemTime do
       |> init_rtc()
       |> set_system_time_from_rtc()
 
+    NervesTime.Waiter.stop_waiting()
+
     {:noreply, new_state}
   end
 

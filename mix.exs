@@ -33,6 +33,7 @@ defmodule NervesTime.MixProject do
 
   def application do
     [
+      env: [wait_for_rtc_timeout: 0],
       extra_applications: [:logger],
       mod: {NervesTime.Application, []}
     ]
