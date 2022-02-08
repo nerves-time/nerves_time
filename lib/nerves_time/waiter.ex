@@ -9,23 +9,21 @@ defmodule NervesTime.Waiter do
   to `:infinity` will however block until that happens.
   """
   use GenServer
+  require Logger
 
   def start_link(init_arg) do
     GenServer.start_link(__MODULE__, init_arg, name: __MODULE__)
-  end
-
-  def stop_waiting do
-    send(__MODULE__, :stop_waiting)
   end
 
   @impl true
   def init(_) do
     timeout = Application.fetch_env!(:nerves_time, :wait_for_rtc_timeout)
 
-    receive do
-      :stop_waiting -> :ignore
-    after
-      timeout -> :ignore
+    with :timeout <- NervesTime.SystemTime.await_initialization(timeout),
+         t when t > 0 <- timeout do
+      Logger.warn("Timeout expired when waiting for system time adjustment")
     end
+
+    :ignore
   end
 end
