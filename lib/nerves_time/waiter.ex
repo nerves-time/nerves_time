@@ -19,8 +19,8 @@ defmodule NervesTime.Waiter do
   def init(_) do
     timeout = Application.fetch_env!(:nerves_time, :wait_for_rtc_timeout)
 
-    with :timeout <- NervesTime.SystemTime.await_initialization(timeout),
-         t when t > 0 <- timeout do
+    with t when t > 0 <- timeout,
+         :timeout <- NervesTime.SystemTime.await_initialization(timeout) do
       Logger.warn("Timeout expired when waiting for system time adjustment")
     end
 
