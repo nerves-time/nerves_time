@@ -23,6 +23,12 @@ defmodule NervesTime.SystemTime do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
+  def await_initialization(timeout) do
+    GenServer.call(__MODULE__, :await_async_init, timeout)
+  catch
+    :exit, _ -> :timeout
+  end
+
   @impl GenServer
   def init(_args) do
     app_env = Application.get_all_env(:nerves_time)
@@ -68,8 +74,6 @@ defmodule NervesTime.SystemTime do
       |> init_rtc()
       |> set_system_time_from_rtc()
 
-    NervesTime.Waiter.stop_waiting()
-
     {:noreply, new_state}
   end
 
@@ -93,6 +97,11 @@ defmodule NervesTime.SystemTime do
 
   @impl GenServer
   def handle_call(:update_rtc, _from, state) do
+    {:reply, :ok, state}
+  end
+
+  @impl GenServer
+  def handle_call(:await_async_init, _from, state) do
     {:reply, :ok, state}
   end
 
