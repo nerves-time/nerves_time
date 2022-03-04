@@ -20,6 +20,9 @@ defmodule NervesTime do
   * `:latest_time` - times after this are considered invalid and adjusted
   * `:ntpd` - the absolute path to the Busybox `ntpd`. This only needs to be
     set if your system does not provide `ntpd` in the `$PATH`.
+  * `:await_initialization_timeout` - Timeout to await a successful system time
+    initialization on startup before continuing asynchronously. Set in milliseconds.
+    Defaults to `0`.
   """
 
   @doc """
