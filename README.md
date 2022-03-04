@@ -37,6 +37,23 @@ enabled. If you haven't explicitly disabled the, they're probably enabled.
 
 ## Configuration
 
+### Startup
+
+`nerves_time` by default does not block waiting for a valid system time to be set.
+This can result in your application running before the time has been adjusted, which
+may be undesirable. To lessen the likelyhood of that happening you can adjust 
+the `:await_initialization_timeout` config to wait for a valid system time to be set. 
+If `nerves_time` fails to do that within the given timeframe it will stop blocking
+startup and continue trying asynchronously.
+
+```elixir
+# config/config.exs
+
+config :nerves_time, await_initialization_timeout: :timer.seconds(5)
+```
+
+### NTP
+
 `nerves_time` uses [ntp.pool.org](https://www.ntppool.org/en/) for time
 synchronization. Please see their [terms of
 use](https://www.ntppool.org/tos.html) before tweaking `nerves_time`.
@@ -56,7 +73,9 @@ config :nerves_time, :servers, [
 It's also possible to configure NTP servers at runtime. See
 `NervesTime.set_ntp_servers/1`.
 
-`nerves_time` also has a concept of a valid time range. This minimizes time
+### Valid time range
+
+`nerves_time` has a concept of a valid time range. This minimizes time
 errors on systems without clocks or Internet connections or that may have some
 issue that causes a very wrong time value. The default valid time range is
 hardcoded and moves forward each release. It is not the build timestamp since

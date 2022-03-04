@@ -3,7 +3,7 @@ defmodule NervesTime.Waiter do
   Waits for `NervesTime.SystemTime` to successfully set a sane real time.
 
   By default that time is fetched completely async, but this waiter can be
-  configured using `config :nerves_time, wait_for_rtc_timeout: timeout` to
+  configured using `config :nerves_time, await_initialization_timeout: timeout` to
   block startup for the configured duration. If the timeout elapses there's
   still no guarantee for a sane real time being set. Setting the timeout
   to `:infinity` will however block until that happens.
@@ -17,7 +17,7 @@ defmodule NervesTime.Waiter do
 
   @impl true
   def init(_) do
-    timeout = Application.fetch_env!(:nerves_time, :wait_for_rtc_timeout)
+    timeout = Application.fetch_env!(:nerves_time, :await_initialization_timeout)
 
     with t when t > 0 <- timeout,
          :timeout <- NervesTime.SystemTime.await_initialization(timeout) do
