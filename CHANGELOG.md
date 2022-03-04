@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.5
+
+* New feature
+  * Support blocking NervesTime startup until initialized with a valid time.
+    See [Startup](https://github.com/nerves-time/nerves_time#startup) doc and
+    `NervesTime.Waiter` for more info (thanks @LostKobrakai :heart:)
+
 ## v0.4.4
 
 * Updates
