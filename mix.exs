@@ -20,7 +20,7 @@ defmodule NervesTime.MixProject do
       start_permanent: Mix.env() == :prod,
       build_embedded: true,
       dialyzer: [
-        flags: [:unmatched_returns, :error_handling, :race_conditions, :underspecs]
+        flags: [:unmatched_returns, :error_handling, :missing_return, :extra_return, :underspecs]
       ],
       deps: deps(),
       preferred_cli_env: %{
