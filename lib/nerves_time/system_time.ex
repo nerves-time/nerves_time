@@ -115,7 +115,7 @@ defmodule NervesTime.SystemTime do
   @impl GenServer
   def terminate(reason, %{rtc: rtc, rtc_state: rtc_state}) do
     if rtc do
-      Logger.warn("Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
+      Logger.warning("Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
       rtc.terminate(rtc_state)
     end
 

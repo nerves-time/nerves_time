@@ -178,7 +178,7 @@ defmodule NervesTime.Ntpd do
           true
 
         :ok ->
-          Logger.warn("ntpd crash detected. Delaying next start...")
+          Logger.warning("ntpd crash detected. Delaying next start...")
           false
       end
 
@@ -189,7 +189,7 @@ defmodule NervesTime.Ntpd do
 
   defp schedule_ntpd_start(%State{servers: []} = state) do
     # Don't schedule ntpd to start if no servers configured.
-    Logger.warn("Not scheduling ntpd to start since no servers configured")
+    Logger.warning("Not scheduling ntpd to start since no servers configured")
     state
   end
 
