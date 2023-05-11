@@ -11,11 +11,13 @@ defmodule NervesTime.SystemTime do
     @type t() :: %__MODULE__{
             rtc_spec: {module(), any()},
             rtc: module(),
-            rtc_state: term()
+            rtc_state: term(),
+            synchronized?: boolean()
           }
     defstruct rtc_spec: nil,
               rtc: nil,
-              rtc_state: nil
+              rtc_state: nil,
+              synchronized?: false
   end
 
   @spec start_link(any()) :: GenServer.on_start()
@@ -38,6 +40,10 @@ defmodule NervesTime.SystemTime do
     Process.flag(:trap_exit, true)
 
     {:ok, %State{rtc_spec: rtc_spec}, {:continue, :continue}}
+  end
+
+  def synchronized?() do
+    GenServer.call(__MODULE__, :synchronized?)
   end
 
   @doc """
@@ -92,7 +98,7 @@ defmodule NervesTime.SystemTime do
   def handle_call(:update_rtc, _from, %State{rtc: rtc} = state) when rtc != nil do
     system_time = NaiveDateTime.utc_now()
     new_rtc_state = rtc.set_time(state.rtc_state, system_time)
-    {:reply, :ok, %State{state | rtc_state: new_rtc_state}}
+    {:reply, :ok, %State{state | rtc_state: new_rtc_state, synchronized?: true}}
   end
 
   @impl GenServer
@@ -103,6 +109,11 @@ defmodule NervesTime.SystemTime do
   @impl GenServer
   def handle_call(:await_async_init, _from, state) do
     {:reply, :ok, state}
+  end
+
+  @impl GenServer
+  def handle_call(:synchronized?, _from, state) do
+    {:reply, state.synchronized?, state}
   end
 
   @impl GenServer
@@ -144,7 +155,7 @@ defmodule NervesTime.SystemTime do
 
   @spec set_system_time_from_rtc(State.t()) :: State.t()
   defp set_system_time_from_rtc(%State{rtc: rtc} = state) when not is_nil(rtc) do
-    final_rtc_state =
+    rtc_status =
       case rtc.get_time(state.rtc_state) do
         {:ok, %NaiveDateTime{} = rtc_time, next_rtc_state} ->
           Logger.info("RTC (#{inspect(rtc)}) reports that the time is #{inspect(rtc_time)}")
@@ -154,10 +165,10 @@ defmodule NervesTime.SystemTime do
         {:unset, next_rtc_state} ->
           Logger.info("RTC (#{inspect(rtc)}) reports that the time hasn't been set.")
           now = sane_system_time()
-          rtc.set_time(next_rtc_state, now)
+          {:sane, rtc.set_time(next_rtc_state, now)}
       end
 
-    %{state | rtc_state: final_rtc_state}
+    set_rtc_synchronized(rtc_status, state)
   end
 
   defp set_system_time_from_rtc(state) do
@@ -167,6 +178,17 @@ defmodule NervesTime.SystemTime do
     _ = sane_system_time()
 
     state
+  end
+
+  @spec set_rtc_synchronized({:insync | :sane, term()}, State.t()) :: State.t()
+  defp set_rtc_synchronized({status, rtc_state}, state) do
+    case status do
+      :insync ->
+        %{state | rtc_state: rtc_state, synchronized?: true}
+
+      _ ->
+        %{state | rtc_state: rtc_state, synchronized?: false}
+    end
   end
 
   defp sane_system_time() do
@@ -183,6 +205,7 @@ defmodule NervesTime.SystemTime do
     end
   end
 
+  @spec check_rtc_time_and_set(module(), NaiveDateTime.t(), term()) :: {:insync | :sane, term()}
   defp check_rtc_time_and_set(rtc, rtc_time, rtc_state) do
     system_time = NaiveDateTime.utc_now()
 
@@ -192,7 +215,7 @@ defmodule NervesTime.SystemTime do
         # real-time clock that already set it or the default time
         # is better than any knowledge that we have to say that it's
         # wrong.
-        rtc_state
+        {:insync, rtc_state}
 
       new_time ->
         set_system_time(new_time)
@@ -203,9 +226,12 @@ defmodule NervesTime.SystemTime do
           NaiveDateTime.diff(rtc_time, new_time, :second)
           |> div(3600)
 
-        if rtc_delta != 0,
-          do: rtc.set_time(rtc_state, new_time),
-          else: rtc_state
+        rtc_state =
+          if rtc_delta != 0,
+            do: rtc.set_time(rtc_state, new_time),
+            else: rtc_state
+
+        {:sane, rtc_state}
     end
   end
 
