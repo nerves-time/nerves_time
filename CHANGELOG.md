@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.6
+
+* Updates
+  * Build cleanly on Elixir 1.15. This raises the minimum supported Elixir
+    version to 1.11 since we no longer test on early versions.
+
 ## v0.4.5
 
 * New feature
