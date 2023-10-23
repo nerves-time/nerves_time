@@ -43,7 +43,10 @@ defmodule NervesTime do
   application is restarted.
   """
   @spec synchronized?() :: boolean()
-  defdelegate synchronized?, to: NervesTime.Ntpd
+  def synchronized?() do
+    NervesTime.Ntpd.synchronized?() ||
+      NervesTime.SystemTime.synchronized?()
+  end
 
   @doc """
   Set the list of NTP servers
