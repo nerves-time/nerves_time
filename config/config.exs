@@ -6,7 +6,7 @@ import Config
 # if you want to provide default values for your application for
 # 3rd-party users, it should be done in your "mix.exs" file.
 
-config :nerves_time, ntpd: "test/fixtures/fake_busybox_ntpd"
+config :nerves_time, ntpd: Path.join(File.cwd!(), "test/fixtures/fake_busybox_ntpd")
 
 # You can configure your application as:
 #

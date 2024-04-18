@@ -116,7 +116,7 @@ defmodule NervesTime.Ntpd do
 
   @impl GenServer
   def handle_call({:set_ntp_servers, servers}, _from, state) do
-    new_state = %{state | servers: servers} |> stop_ntpd() |> schedule_ntpd_start()
+    new_state = %{state | servers: servers} |> cleanup_and_restart()
 
     {:reply, :ok, new_state}
   end
@@ -128,12 +128,7 @@ defmodule NervesTime.Ntpd do
 
   @impl GenServer
   def handle_call(:restart_ntpd, _from, state) do
-    new_state =
-      %{state | clean_start?: true}
-      |> stop_ntpd()
-      |> schedule_ntpd_start()
-
-    {:reply, :ok, new_state}
+    {:reply, :ok, cleanup_and_restart(state)}
   end
 
   @impl GenServer
@@ -165,6 +160,11 @@ defmodule NervesTime.Ntpd do
     # Log abnormal exits to aide debugging.
     Logger.info("NervesTime.Ntpd: unexpected :EXIT #{inspect(from)}/#{inspect(reason)}")
     {:stop, reason, state}
+  end
+
+  defp prep_ntpd_start(%State{servers: []} = state) do
+    # Don't prep ntpd if no servers configured.
+    state
   end
 
   defp prep_ntpd_start(state) do
@@ -199,14 +199,33 @@ defmodule NervesTime.Ntpd do
     state
   end
 
+  defp cleanup_and_restart(state) do
+    state
+    |> stop_ntpd()
+    |> prep_ntpd_start()
+    |> schedule_ntpd_start()
+  end
+
   defp ntpd_restart_delay(%State{clean_start?: false}), do: @ntpd_restart_delay
   defp ntpd_restart_delay(%State{clean_start?: true}), do: @ntpd_clean_start_delay
 
-  defp stop_ntpd(%State{daemon: nil} = state), do: state
+  defp stop_ntpd(%State{daemon: pid, socket: socket} = state) do
+    unless is_nil(pid) do
+      GenServer.stop(pid)
+    end
 
-  defp stop_ntpd(%State{daemon: pid} = state) do
-    GenServer.stop(pid)
-    %State{state | daemon: nil, synchronized?: false}
+    unless is_nil(socket) do
+      :ok = :gen_udp.close(socket)
+    end
+
+    # this is needed otherwise dialyzer complain
+    try do
+      File.rm!(socket_path())
+    rescue
+      _ -> nil
+    end
+
+    %State{state | daemon: nil, socket: nil, synchronized?: false}
   end
 
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
