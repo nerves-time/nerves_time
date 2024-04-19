@@ -1,8 +1,7 @@
 defmodule NervesTime.SystemTime do
+  @moduledoc false
   use GenServer
   require Logger
-
-  @moduledoc false
 
   @default_rtc {NervesTime.FileTime, []}
 
@@ -23,10 +22,27 @@ defmodule NervesTime.SystemTime do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
+  @spec await_initialization(non_neg_integer()) :: :ok | :timeout
   def await_initialization(timeout) do
-    GenServer.call(__MODULE__, :await_async_init, timeout)
+    GenServer.call(__MODULE__, :await_initialization, timeout)
   catch
     :exit, _ -> :timeout
+  end
+
+  @doc """
+  Update the RTC with the latest system time
+  """
+  @spec update_rtc() :: :ok
+  def update_rtc() do
+    GenServer.call(__MODULE__, :update_rtc)
+  end
+
+  @doc """
+  Update the System time and set the RTC
+  """
+  @spec set_time(NaiveDateTime.t()) :: :ok | :error
+  def set_time(%NaiveDateTime{} = time) do
+    GenServer.call(__MODULE__, {:set_time, time})
   end
 
   @impl GenServer
@@ -38,20 +54,6 @@ defmodule NervesTime.SystemTime do
     Process.flag(:trap_exit, true)
 
     {:ok, %State{rtc_spec: rtc_spec}, {:continue, :continue}}
-  end
-
-  @doc """
-  Update the RTC with the latest system time
-  """
-  def update_rtc() do
-    GenServer.call(__MODULE__, :update_rtc)
-  end
-
-  @doc """
-  Update the System time and set the RTC
-  """
-  def set_time(%NaiveDateTime{} = time) do
-    GenServer.call(__MODULE__, {:set_time, time})
   end
 
   defp normalize_rtc_spec({module, args} = rtc_spec)
@@ -101,7 +103,7 @@ defmodule NervesTime.SystemTime do
   end
 
   @impl GenServer
-  def handle_call(:await_async_init, _from, state) do
+  def handle_call(:await_initialization, _from, state) do
     {:reply, :ok, state}
   end
 
@@ -125,7 +127,7 @@ defmodule NervesTime.SystemTime do
   defp init_rtc(state) do
     {rtc_module, rtc_arg} = state.rtc_spec
 
-    case apply(rtc_module, :init, [rtc_arg]) do
+    case rtc_module.init.(rtc_arg) do
       {:ok, rtc_state} ->
         %{state | rtc: rtc_module, rtc_state: rtc_state}
 

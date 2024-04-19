@@ -1,8 +1,7 @@
 defmodule NervesTime.Ntpd do
+  @moduledoc false
   use GenServer
   require Logger
-
-  @moduledoc false
 
   # If restarting ntpd due to a crash, delay its start to avoid pegging
   # ntp servers. This delay can be long since the clock has either been

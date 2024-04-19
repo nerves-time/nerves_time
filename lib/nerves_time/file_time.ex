@@ -1,7 +1,4 @@
 defmodule NervesTime.FileTime do
-  @default_path ".nerves_time"
-  @behaviour NervesTime.RealTimeClock
-
   @moduledoc """
   FileTime simulates a real-time clock using a file's mtime
 
@@ -16,6 +13,9 @@ defmodule NervesTime.FileTime do
   minutes, hours, or days can get the clock to within time ranges
   needed for X.509 certificate validation.
   """
+  @behaviour NervesTime.RealTimeClock
+
+  @default_path ".nerves_time"
 
   @doc false
   @impl NervesTime.RealTimeClock

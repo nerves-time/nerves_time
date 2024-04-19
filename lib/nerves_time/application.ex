@@ -1,8 +1,9 @@
 defmodule NervesTime.Application do
   @moduledoc false
-  require Logger
   use Application
+  require Logger
 
+  @impl Application
   def start(_type, _args) do
     children = [
       NervesTime.SystemTime,

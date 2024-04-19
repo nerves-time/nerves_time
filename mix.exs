@@ -62,6 +62,7 @@ defmodule NervesTime.MixProject do
   defp deps do
     [
       {:muontrap, "~> 1.0 or ~> 0.5"},
+      {:credo, "~> 1.6", only: :dev, runtime: false},
       {:elixir_make, "~> 0.6", runtime: false},
       {:dialyxir, "~> 1.4.1", only: :dev, runtime: false},
       {:ex_doc, "~> 0.22", only: :docs, runtime: false}
