@@ -2,6 +2,7 @@ defmodule NervesTime.MixProject do
   use Mix.Project
 
   @version "0.4.6"
+  @description "Keep time in sync on Nerves devices"
   @source_url "https://github.com/nerves-time/nerves_time"
 
   def project do
@@ -9,7 +10,7 @@ defmodule NervesTime.MixProject do
       app: :nerves_time,
       version: @version,
       elixir: "~> 1.11",
-      description: description(),
+      description: @description,
       package: package(),
       source_url: @source_url,
       compilers: [:elixir_make | Mix.compilers()],
@@ -37,10 +38,6 @@ defmodule NervesTime.MixProject do
       extra_applications: [:logger],
       mod: {NervesTime.Application, []}
     ]
-  end
-
-  defp description do
-    "Keep time in sync on Nerves devices"
   end
 
   defp package do
