@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.7
+
+* Updates
+  * Don't create communications socket file if not starting `ntpd` so that it
+    doesn't need to be cleaned up. (thanks @joshk)
+  * Add and clean up missing typespecs
+
 ## v0.4.6
 
 * Updates
