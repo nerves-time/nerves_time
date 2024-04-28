@@ -149,12 +149,12 @@ defmodule NervesTime.SystemTime do
     final_rtc_state =
       case rtc.get_time(state.rtc_state) do
         {:ok, %NaiveDateTime{} = rtc_time, next_rtc_state} ->
-          Logger.info("RTC (#{inspect(rtc)}) reports that the time is #{inspect(rtc_time)}")
+          Logger.info("[#{inspect(rtc)}] RTC reports that the time is #{inspect(rtc_time)}")
           check_rtc_time_and_set(rtc, rtc_time, next_rtc_state)
 
         # Try to fix an unset or corrupt RTC
         {:unset, next_rtc_state} ->
-          Logger.info("RTC (#{inspect(rtc)}) reports that the time hasn't been set.")
+          Logger.info("[#{inspect(rtc)}] RTC reports that the time hasn't been set.")
           now = sane_system_time()
           rtc.set_time(next_rtc_state, now)
       end
