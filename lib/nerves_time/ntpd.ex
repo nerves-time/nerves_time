@@ -189,7 +189,7 @@ defmodule NervesTime.Ntpd do
 
   defp schedule_ntpd_start(%State{servers: []} = state) do
     # Don't schedule ntpd to start if no servers configured.
-    Logger.warning("Not scheduling ntpd to start since no servers configured")
+    Logger.info("[NervesTime] Not scheduling ntpd to start (no servers configured)")
     state
   end
 
