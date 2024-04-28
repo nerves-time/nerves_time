@@ -33,7 +33,7 @@ time will lag. The following line should be in the beginning or middle of the
 
 If you're using one of the official Nerves Systems, then this is all that's
 needed. `nerves_time` requires Busybox's `ntpd` and `date` applets to be
-enabled. If you haven't explicitly disabled the, they're probably enabled.
+enabled. If you haven't explicitly disabled them, they're probably enabled.
 
 ## Configuration
 
@@ -41,8 +41,8 @@ enabled. If you haven't explicitly disabled the, they're probably enabled.
 
 `nerves_time` by default does not block waiting for a valid system time to be set.
 This can result in your application running before the time has been adjusted, which
-may be undesirable. To lessen the likelyhood of that happening you can adjust 
-the `:await_initialization_timeout` config to wait for a valid system time to be set. 
+may be undesirable. To lessen the likelyhood of that happening you can adjust
+the `:await_initialization_timeout` config to wait for a valid system time to be set.
 If `nerves_time` fails to do that within the given timeframe it will stop blocking
 startup and continue trying asynchronously.
 
