@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.8
+
+* Fixes
+  * Fix "Cannot initialize rtc" error that's in v0.4.7. (thanks @joshk)
+  * Add "[NervesTime]" to log messages to make it easier to identify where they
+    come from.
+
 ## v0.4.7
 
 * Updates
