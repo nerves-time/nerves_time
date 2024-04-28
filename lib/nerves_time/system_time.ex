@@ -127,7 +127,7 @@ defmodule NervesTime.SystemTime do
   defp init_rtc(state) do
     {rtc_module, rtc_arg} = state.rtc_spec
 
-    case rtc_module.init.(rtc_arg) do
+    case rtc_module.init(rtc_arg) do
       {:ok, rtc_state} ->
         %{state | rtc: rtc_module, rtc_state: rtc_state}
 
