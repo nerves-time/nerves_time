@@ -22,7 +22,7 @@ defmodule NervesTime.Waiter do
 
     with t when t > 0 <- timeout,
          :timeout <- NervesTime.SystemTime.await_initialization(timeout) do
-      Logger.warning("Timeout expired when waiting for system time adjustment")
+      Logger.warning("[NervesTime] Timeout expired when waiting for system time adjustment")
     end
 
     :ignore

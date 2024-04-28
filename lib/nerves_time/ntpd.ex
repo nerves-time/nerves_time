@@ -157,7 +157,7 @@ defmodule NervesTime.Ntpd do
 
   def handle_info({:EXIT, from, reason}, state) do
     # Log abnormal exits to aide debugging.
-    Logger.info("NervesTime.Ntpd: unexpected :EXIT #{inspect(from)}/#{inspect(reason)}")
+    Logger.info("[NervesTime] unexpected ntpd :EXIT #{inspect(from)}/#{inspect(reason)}")
     {:stop, reason, state}
   end
 
@@ -177,7 +177,7 @@ defmodule NervesTime.Ntpd do
           true
 
         :ok ->
-          Logger.warning("ntpd crash detected. Delaying next start...")
+          Logger.warning("[NervesTime] ntpd crash detected. Delaying next start...")
           false
       end
 
@@ -241,7 +241,7 @@ defmodule NervesTime.Ntpd do
   end
 
   defp handle_ntpd_report({"unsync", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
-    Logger.error("ntpd reports that it is unsynchronized; restarting")
+    Logger.error("[NervesTime] ntpd reports that it is unsynchronized; restarting")
 
     # According to the Busybox ntpd docs, if you get an `unsync` notification, then
     # you should restart ntpd to be safe. This is stated to be due to name resolution
@@ -255,7 +255,7 @@ defmodule NervesTime.Ntpd do
   end
 
   defp handle_ntpd_report(report, state) do
-    Logger.error("ntpd ignored unexpected report #{inspect(report)}")
+    Logger.error("[NervesTime] ntpd ignored unexpected report #{inspect(report)}")
     {:noreply, state}
   end
 
@@ -270,7 +270,7 @@ defmodule NervesTime.Ntpd do
     # Add "-d" and enable log_output below for more verbose prints from ntpd.
     args = ["-n", "-S", ntpd_script_path | server_args]
 
-    Logger.debug("Starting #{ntpd_path} with: #{inspect(args)}")
+    Logger.debug("[NervesTime] starting #{ntpd_path} with: #{inspect(args)}")
 
     {:ok, pid} =
       MuonTrap.Daemon.start_link(ntpd_path, args,

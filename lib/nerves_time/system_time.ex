@@ -65,7 +65,10 @@ defmodule NervesTime.SystemTime do
   defp normalize_rtc_spec(module) when is_atom(module), do: {module, []}
 
   defp normalize_rtc_spec(other) do
-    Logger.error("Bad rtc spec '#{inspect(other)}. Reverting to '#{inspect(@default_rtc)}'")
+    Logger.error(
+      "[NervesTime] Bad rtc spec '#{inspect(other)}. Reverting to '#{inspect(@default_rtc)}'"
+    )
+
     @default_rtc
   end
 
@@ -117,7 +120,7 @@ defmodule NervesTime.SystemTime do
   @impl GenServer
   def terminate(reason, %{rtc: rtc, rtc_state: rtc_state}) do
     if rtc do
-      Logger.warning("Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
+      Logger.warning("[NervesTime] Stopping RTC #{inspect(rtc)}: #{inspect(reason)}")
       rtc.terminate(rtc_state)
     end
 
@@ -132,13 +135,16 @@ defmodule NervesTime.SystemTime do
         %{state | rtc: rtc_module, rtc_state: rtc_state}
 
       {:error, reason} ->
-        Logger.error("Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(reason)}")
+        Logger.error(
+          "[NervesTime] Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(reason)}"
+        )
+
         state
     end
   catch
     what, why ->
       Logger.error(
-        "Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(what)}, #{inspect(why)}"
+        "[NervesTime] Cannot initialize rtc '#{inspect(state.rtc_spec)}': #{inspect(what)}, #{inspect(why)}"
       )
 
       state
@@ -149,12 +155,15 @@ defmodule NervesTime.SystemTime do
     final_rtc_state =
       case rtc.get_time(state.rtc_state) do
         {:ok, %NaiveDateTime{} = rtc_time, next_rtc_state} ->
-          Logger.info("[#{inspect(rtc)}] RTC reports that the time is #{inspect(rtc_time)}")
+          Logger.info(
+            "[NervesTime] #{inspect(rtc)} reports that the time is #{inspect(rtc_time)}"
+          )
+
           check_rtc_time_and_set(rtc, rtc_time, next_rtc_state)
 
         # Try to fix an unset or corrupt RTC
         {:unset, next_rtc_state} ->
-          Logger.info("[#{inspect(rtc)}] RTC reports that the time hasn't been set.")
+          Logger.info("[NervesTime] #{inspect(rtc)} reports that the time hasn't been set.")
           now = sane_system_time()
           rtc.set_time(next_rtc_state, now)
       end
@@ -216,12 +225,12 @@ defmodule NervesTime.SystemTime do
 
     case System.cmd("date", ["-u", "-s", string_time]) do
       {_result, 0} ->
-        Logger.info("nerves_time set system clock to #{string_time} UTC")
+        Logger.info("[NervesTime] nerves_time set system clock to #{string_time} UTC")
         :ok
 
       {message, code} ->
         Logger.error(
-          "nerves_time can't set system clock to '#{string_time}': #{code} #{inspect(message)}"
+          "[NervesTime] nerves_time can't set system clock to '#{string_time}': #{code} #{inspect(message)}"
         )
 
         :error
