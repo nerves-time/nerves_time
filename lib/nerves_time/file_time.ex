@@ -1,3 +1,8 @@
+# SPDX-FileCopyrightText: 2018 Connor Rigby
+# SPDX-FileCopyrightText: 2018 Frank Hunleth
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesTime.FileTime do
   @moduledoc """
   FileTime simulates a real-time clock using a file's mtime

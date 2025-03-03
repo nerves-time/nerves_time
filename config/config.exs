@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2016 Marcin Operacz
+# SPDX-FileCopyrightText: 2018 Frank Hunleth
+# SPDX-FileCopyrightText: 2024 Josh Kalderimis
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 import Config
 
 # This configuration is loaded before any dependency and is restricted

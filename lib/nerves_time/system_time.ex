@@ -1,3 +1,9 @@
+# SPDX-FileCopyrightText: 2020 Eric Rauer
+# SPDX-FileCopyrightText: 2022 Benjamin Milde
+# SPDX-FileCopyrightText: 2024 Frank Hunleth
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesTime.SystemTime do
   @moduledoc false
   use GenServer

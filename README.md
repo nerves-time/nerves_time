@@ -1,7 +1,9 @@
 # nerves_time
 
-[![CircleCI](https://circleci.com/gh/nerves-time/nerves_time.svg?style=svg)](https://circleci.com/gh/nerves-time/nerves_time)
 [![Hex version](https://img.shields.io/hexpm/v/nerves_time.svg "Hex version")](https://hex.pm/packages/nerves_time)
+[![API docs](https://img.shields.io/hexpm/v/nerves_time.svg?label=hexdocs "API docs")](https://hexdocs.pm/nerves_time/NervesTime.html)
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/nerves-time/nerves_time/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/nerves-time/nerves_time/tree/main)
+[![REUSE status](https://api.reuse.software/badge/github.com/nerves-time/nerves_time)](https://api.reuse.software/info/github.com/nerves-time/nerves_time)
 
 `NervesTime` keeps the system clock on [Nerves](http://nerves-project.org)
 devices in sync when connected to the network and close to in sync when

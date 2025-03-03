@@ -1,3 +1,12 @@
+# SPDX-FileCopyrightText: 2016 Jeffery Utter
+# SPDX-FileCopyrightText: 2016 Marcin Operacz
+# SPDX-FileCopyrightText: 2018 Connor Rigby
+# SPDX-FileCopyrightText: 2018 Frank Hunleth
+# SPDX-FileCopyrightText: 2020 Eric Rauer
+# SPDX-FileCopyrightText: 2024 Josh Kalderimis
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesTime.Ntpd do
   @moduledoc false
   use GenServer
