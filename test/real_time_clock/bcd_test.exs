@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Connor Rigby
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesTime.RealTimeClock.BCDTest do
   use ExUnit.Case
   alias NervesTime.RealTimeClock.BCD
