@@ -9,7 +9,7 @@ defmodule NervesTime.MixProject do
     [
       app: :nerves_time,
       version: @version,
-      elixir: "~> 1.11",
+      elixir: "~> 1.13",
       description: @description,
       package: package(),
       source_url: @source_url,
