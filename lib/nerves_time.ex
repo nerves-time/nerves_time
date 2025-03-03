@@ -1,3 +1,11 @@
+# SPDX-FileCopyrightText: 2016 Marcin Operacz
+# SPDX-FileCopyrightText: 2018 Frank Hunleth
+# SPDX-FileCopyrightText: 2020 Connor Rigby
+# SPDX-FileCopyrightText: 2020 Eric Rauer
+# SPDX-FileCopyrightText: 2022 Benjamin Milde
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesTime do
   @moduledoc """
   Keep time in sync on Nerves devices

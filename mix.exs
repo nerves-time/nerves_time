@@ -43,16 +43,21 @@ defmodule NervesTime.MixProject do
   defp package do
     %{
       files: [
-        "lib",
-        "src/*.[ch]",
-        "mix.exs",
-        "README.md",
-        "LICENSE",
         "CHANGELOG.md",
-        "Makefile"
+        "lib",
+        "LICENSES",
+        "src/*.[ch]",
+        "Makefile",
+        "mix.exs",
+        "NOTICE",
+        "README.md",
+        "REUSE.toml"
       ],
       licenses: ["Apache-2.0"],
-      links: %{"GitHub" => @source_url}
+      links: %{
+        "GitHub" => @source_url,
+        "REUSE Compliance" => "https://api.reuse.software/info/github.com/nerves-time/nerves_time"
+      }
     }
   end
 
