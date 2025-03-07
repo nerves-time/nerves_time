@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Connor Rigby
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule NervesTime.RealTimeClock.BCD do
   @moduledoc """
   Convert between integers and binary-coded decimals (BCD)
