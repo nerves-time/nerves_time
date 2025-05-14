@@ -65,7 +65,8 @@ defmodule NervesTime.MixProject do
 
   defp deps do
     [
-      {:igniter, "~> 0.5", only: [:dev, :test]},
+      # TODO: Set to `runtime: false` and fix Dialyzer issue.
+      {:igniter, "~> 0.5", optional: true, runtime: true},
       {:muontrap, "~> 1.0 or ~> 0.5"},
       {:credo, "~> 1.6", only: :dev, runtime: false},
       {:elixir_make, "~> 0.6", runtime: false},
