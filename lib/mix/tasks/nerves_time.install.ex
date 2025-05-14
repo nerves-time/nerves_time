@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 Peter Ullrich
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 defmodule Mix.Tasks.NervesTime.Install.Docs do
   @moduledoc false
 
