@@ -18,7 +18,9 @@ defmodule NervesTime.MixProject do
       make_clean: ["clean"],
       make_error_message: "",
       docs: docs(),
+      aliases: aliases(),
       start_permanent: Mix.env() == :prod,
+      consolidate_protocols: Mix.env() != :dev,
       build_embedded: true,
       dialyzer: [
         flags: [:unmatched_returns, :error_handling, :missing_return, :extra_return, :underspecs]
@@ -63,6 +65,8 @@ defmodule NervesTime.MixProject do
 
   defp deps do
     [
+      # TODO: Set to `runtime: false` and fix Dialyzer issue.
+      {:igniter, "~> 0.5", optional: true, runtime: true},
       {:muontrap, "~> 1.0 or ~> 0.5"},
       {:credo, "~> 1.6", only: :dev, runtime: false},
       {:elixir_make, "~> 0.6", runtime: false},
@@ -78,6 +82,12 @@ defmodule NervesTime.MixProject do
       source_ref: "v#{@version}",
       source_url: @source_url,
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
+    ]
+  end
+
+  defp aliases() do
+    [
+      test: "test --warnings-as-errors"
     ]
   end
 end
