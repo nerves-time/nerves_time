@@ -18,6 +18,7 @@ defmodule NervesTime.MixProject do
       make_clean: ["clean"],
       make_error_message: "",
       docs: docs(),
+      aliases: aliases(),
       start_permanent: Mix.env() == :prod,
       consolidate_protocols: Mix.env() != :dev,
       build_embedded: true,
@@ -80,6 +81,12 @@ defmodule NervesTime.MixProject do
       source_ref: "v#{@version}",
       source_url: @source_url,
       skip_undefined_reference_warnings_on: ["CHANGELOG.md"]
+    ]
+  end
+
+  defp aliases() do
+    [
+      test: "test --warnings-as-errors"
     ]
   end
 end
