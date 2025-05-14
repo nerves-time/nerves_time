@@ -19,6 +19,7 @@ defmodule NervesTime.MixProject do
       make_error_message: "",
       docs: docs(),
       start_permanent: Mix.env() == :prod,
+      consolidate_protocols: Mix.env() != :dev,
       build_embedded: true,
       dialyzer: [
         flags: [:unmatched_returns, :error_handling, :missing_return, :extra_return, :underspecs]
@@ -63,6 +64,7 @@ defmodule NervesTime.MixProject do
 
   defp deps do
     [
+      {:igniter, "~> 0.5", only: [:dev, :test]},
       {:muontrap, "~> 1.0 or ~> 0.5"},
       {:credo, "~> 1.6", only: :dev, runtime: false},
       {:elixir_make, "~> 0.6", runtime: false},
