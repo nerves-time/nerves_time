@@ -192,7 +192,7 @@ defmodule NervesTime.Ntpd do
 
     {:ok, socket} = :gen_udp.open(0, [:local, :binary, {:active, true}, {:ip, {:local, path}}])
 
-    %State{state | socket: socket, clean_start?: clean_start}
+    %{state | socket: socket, clean_start?: clean_start}
   end
 
   defp schedule_ntpd_start(%State{servers: []} = state) do
@@ -233,15 +233,15 @@ defmodule NervesTime.Ntpd do
       _ -> nil
     end
 
-    %State{state | daemon: nil, socket: nil, synchronized?: false}
+    %{state | daemon: nil, socket: nil, synchronized?: false}
   end
 
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    {:noreply, %State{state | synchronized?: maybe_update_rtc(stratum)}}
+    {:noreply, %{state | synchronized?: maybe_update_rtc(stratum)}}
   end
 
   defp handle_ntpd_report({"periodic", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    {:noreply, %State{state | synchronized?: maybe_update_rtc(stratum)}}
+    {:noreply, %{state | synchronized?: maybe_update_rtc(stratum)}}
   end
 
   defp handle_ntpd_report({"step", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
