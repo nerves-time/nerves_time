@@ -103,7 +103,7 @@ defmodule NervesTime.SystemTime do
   def handle_call(:update_rtc, _from, %State{rtc: rtc} = state) when rtc != nil do
     system_time = NaiveDateTime.utc_now()
     new_rtc_state = rtc.set_time(state.rtc_state, system_time)
-    {:reply, :ok, %State{state | rtc_state: new_rtc_state}}
+    {:reply, :ok, %{state | rtc_state: new_rtc_state}}
   end
 
   @impl GenServer

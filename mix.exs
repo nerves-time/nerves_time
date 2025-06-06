@@ -23,12 +23,7 @@ defmodule NervesTime.MixProject do
       dialyzer: [
         flags: [:unmatched_returns, :error_handling, :missing_return, :extra_return, :underspecs]
       ],
-      deps: deps(),
-      preferred_cli_env: %{
-        docs: :docs,
-        "hex.publish": :docs,
-        "hex.build": :docs
-      }
+      deps: deps()
     ]
   end
 
@@ -38,6 +33,10 @@ defmodule NervesTime.MixProject do
       extra_applications: [:logger],
       mod: {NervesTime.Application, []}
     ]
+  end
+
+  def cli do
+    [preferred_envs: %{docs: :docs, "hex.publish": :docs, "hex.build": :docs}]
   end
 
   defp package do
