@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.4.9
+
+* Fixes
+  * Fix compiler warnings on Elixir 1.19
+
 ## v0.4.8
 
 * Fixes
