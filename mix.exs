@@ -30,7 +30,7 @@ defmodule NervesTime.MixProject do
   def application do
     [
       env: [await_initialization_timeout: 0],
-      extra_applications: [:logger],
+      extra_applications: [:logger, :inets],
       mod: {NervesTime.Application, []}
     ]
   end

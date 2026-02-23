@@ -21,6 +21,13 @@ defmodule NervesTime do
 
   * `:servers` - a list of NTP servers for time synchronization. Specifying an
     empty list turns off NTP
+  * `:time_sources` - an ordered list of supplemental time sources to use when
+    NTP has not yet synchronized. Each entry is either a bare module atom or a
+    `{module, opts}` tuple, where the module implements the
+    `NervesTime.TimeSource` behaviour. Sources are tried in order; the first to
+    return a valid time sets the clock. Defaults to `[NervesTime.HTTP]`, which
+    queries `http://whenwhere.nerves-project.org/` by default. Set to `[]` to
+    disable all supplemental sources.
   * `:time_file` - a file path for tracking the time. It allows the system to
     start with a reasonable time quickly on boot and before the Internet is
     available for NTP to work.
@@ -40,15 +47,16 @@ defmodule NervesTime do
   defdelegate set_system_time(time), to: NervesTime.SystemTime, as: :set_time
 
   @doc """
-  Check whether NTP is synchronized with the configured NTP servers
+  Check whether the system clock has been synchronized by any configured time source
 
-  It's possible that the time is already set correctly when this returns false.
-  `NervesTime` decides that NTP is synchronized when `ntpd` sends a
-  notification that the device's clock stratum is 4 or less. Clock adjustments
-  occur before this, though.
+  Returns `true` if either NTP or a supplemental time source (e.g.
+  `NervesTime.HTTP`) has successfully set the clock.
 
-  Once NTP is synchronized, it will remain that way until the `nerves_time`
-  application is restarted.
+  For NTP specifically, synchronization is declared when `ntpd` reports a clock
+  stratum of 4 or less. Clock adjustments from NTP may occur before this point.
+
+  Once synchronized, this returns `true` until the `nerves_time` application is
+  restarted.
   """
   @spec synchronized?() :: boolean()
   defdelegate synchronized?, to: NervesTime.Ntpd

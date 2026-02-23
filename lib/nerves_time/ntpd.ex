@@ -18,8 +18,11 @@ defmodule NervesTime.Ntpd do
   # setting the time that has a low probability of being fixed by trying
   # again immediately. Plus ntp server admins get annoyed by misbehaving
   # IoT devices pegging their servers and we don't want that.
-  @ntpd_restart_delay 60_000
+  @ntpd_restart_delay :timer.minutes(1)
   @ntpd_clean_start_delay 10
+
+  # Retry interval for supplemental time sources when not yet synchronized
+  @time_source_retry_delay :timer.seconds(10)
 
   @default_ntpd_path "/usr/sbin/ntpd"
   @default_ntp_servers [
@@ -36,13 +39,17 @@ defmodule NervesTime.Ntpd do
             servers: [String.t()],
             daemon: nil | pid(),
             synchronized?: boolean(),
-            clean_start?: boolean()
+            clean_start?: boolean(),
+            time_source_timer: nil | reference(),
+            time_source_synced?: boolean()
           }
     defstruct socket: nil,
               servers: [],
               daemon: nil,
               synchronized?: false,
-              clean_start?: true
+              clean_start?: true,
+              time_source_timer: nil,
+              time_source_synced?: false
   end
 
   @spec start_link(any()) :: GenServer.on_start()
@@ -96,8 +103,7 @@ defmodule NervesTime.Ntpd do
 
   @impl GenServer
   def init(_args) do
-    app_env = Application.get_all_env(:nerves_time)
-    ntp_servers = Keyword.get(app_env, :servers, @default_ntp_servers)
+    ntp_servers = Application.get_env(:nerves_time, :servers, @default_ntp_servers)
 
     {:ok, %State{servers: ntp_servers}, {:continue, :continue}}
   end
@@ -108,13 +114,14 @@ defmodule NervesTime.Ntpd do
       state
       |> prep_ntpd_start()
       |> schedule_ntpd_start()
+      |> schedule_time_source_check()
 
     {:noreply, new_state}
   end
 
   @impl GenServer
   def handle_call(:synchronized?, _from, state) do
-    {:reply, state.synchronized?, state}
+    {:reply, state.synchronized? or state.time_source_synced?, state}
   end
 
   @impl GenServer
@@ -153,6 +160,30 @@ defmodule NervesTime.Ntpd do
   end
 
   @impl GenServer
+  def handle_info(:try_time_sources, %State{synchronized?: true} = state) do
+    # NTP is authoritative. This is a stale message that arrived after NTP synced
+    # (the timer fires before it can be cancelled). Nothing to do.
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_info(:try_time_sources, state) do
+    time_sources = Application.get_env(:nerves_time, :time_sources, [NervesTime.HTTP])
+
+    new_state =
+      case get_first_valid_time(time_sources) do
+        {:ok, time} ->
+          NervesTime.SystemTime.set_time(time)
+          %{state | time_source_synced?: true}
+
+        _error ->
+          state
+      end
+
+    {:noreply, schedule_time_source_check(new_state)}
+  end
+
+  @impl GenServer
   def handle_info({:udp, socket, _, 0, data}, %{socket: socket} = state) do
     report = :erlang.binary_to_term(data)
     handle_ntpd_report(report, state)
@@ -168,6 +199,37 @@ defmodule NervesTime.Ntpd do
     # Log abnormal exits to aide debugging.
     Logger.info("[NervesTime] unexpected ntpd :EXIT #{inspect(from)}/#{inspect(reason)}")
     {:stop, reason, state}
+  end
+
+  defp get_first_valid_time([]), do: {:error, :no_valid_time}
+
+  defp get_first_valid_time([module | rest]) when is_atom(module),
+    do: get_first_valid_time([{module, []} | rest])
+
+  defp get_first_valid_time([{module, opts} | rest]) do
+    case module.get_time(opts) do
+      {:ok, _time} = success -> success
+      _error -> get_first_valid_time(rest)
+    end
+  rescue
+    error ->
+      Logger.warning(
+        "[NervesTime] Time source #{inspect(module)} raised an exception: #{inspect(error)}"
+      )
+
+      get_first_valid_time(rest)
+  catch
+    kind, reason ->
+      Logger.warning(
+        "[NervesTime] Time source #{inspect(module)} crashed (#{inspect(kind)}): #{inspect(reason)}"
+      )
+
+      get_first_valid_time(rest)
+  end
+
+  defp get_first_valid_time(invalid) do
+    Logger.warning("[NervesTime] Invalid time sources: #{inspect(invalid)}")
+    {:error, :invalid_time_sources}
   end
 
   defp prep_ntpd_start(%State{servers: []} = state) do
@@ -212,6 +274,7 @@ defmodule NervesTime.Ntpd do
     |> stop_ntpd()
     |> prep_ntpd_start()
     |> schedule_ntpd_start()
+    |> schedule_time_source_check()
   end
 
   defp ntpd_restart_delay(%State{clean_start?: false}), do: @ntpd_restart_delay
@@ -233,15 +296,18 @@ defmodule NervesTime.Ntpd do
       _ -> nil
     end
 
-    %{state | daemon: nil, socket: nil, synchronized?: false}
+    # Reset both sync flags so supplemental sources resume on the next check
+    %{state | daemon: nil, socket: nil, synchronized?: false, time_source_synced?: false}
   end
 
   defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    {:noreply, %{state | synchronized?: maybe_update_rtc(stratum)}}
+    new_state = %{state | synchronized?: maybe_update_rtc(stratum)}
+    {:noreply, cancel_time_source_timer_if_synced(new_state)}
   end
 
   defp handle_ntpd_report({"periodic", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
-    {:noreply, %{state | synchronized?: maybe_update_rtc(stratum)}}
+    new_state = %{state | synchronized?: maybe_update_rtc(stratum)}
+    {:noreply, cancel_time_source_timer_if_synced(new_state)}
   end
 
   defp handle_ntpd_report({"step", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
@@ -255,10 +321,15 @@ defmodule NervesTime.Ntpd do
     # According to the Busybox ntpd docs, if you get an `unsync` notification, then
     # you should restart ntpd to be safe. This is stated to be due to name resolution
     # only being done at initialization.
+    #
+    # Also reschedule time source checks immediately since NTP is no longer
+    # authoritative — stop_ntpd sets synchronized?: false, which causes
+    # schedule_time_source_check to use the short retry interval.
     new_state =
       state
       |> stop_ntpd()
       |> schedule_ntpd_start()
+      |> schedule_time_source_check()
 
     {:noreply, new_state}
   end
@@ -304,4 +375,29 @@ defmodule NervesTime.Ntpd do
   defp socket_path() do
     Path.join(System.tmp_dir!(), "nerves_time_comm")
   end
+
+  # Only schedule a check when neither NTP nor a supplemental source has synced yet.
+  # Once any source succeeds the timer is not rescheduled; it restarts only if
+  # NTP later loses sync (stop_ntpd resets both flags).
+  defp schedule_time_source_check(%State{} = state) do
+    if state.time_source_timer, do: Process.cancel_timer(state.time_source_timer)
+
+    sources = Application.get_env(:nerves_time, :time_sources, [NervesTime.HTTP])
+
+    if sources == [] or state.synchronized? or state.time_source_synced? do
+      %{state | time_source_timer: nil}
+    else
+      timer = Process.send_after(self(), :try_time_sources, @time_source_retry_delay)
+      %{state | time_source_timer: timer}
+    end
+  end
+
+  # Cancel the supplemental source timer the moment NTP takes over, rather than
+  # waiting for the next :try_time_sources tick to notice the sync.
+  defp cancel_time_source_timer_if_synced(%State{synchronized?: true} = state) do
+    if state.time_source_timer, do: Process.cancel_timer(state.time_source_timer)
+    %{state | time_source_timer: nil}
+  end
+
+  defp cancel_time_source_timer_if_synced(state), do: state
 end
