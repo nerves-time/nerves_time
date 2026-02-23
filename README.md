@@ -33,8 +33,9 @@ time will lag. The following line should be in the beginning or middle of the
 +C multi_time_warp
 ```
 
-If you're using one of the official Nerves Systems, then this is all that's
-needed. `nerves_time` requires Busybox's `ntpd` and `date` applets to be
+If you're using one of the official Nerves Systems this is already set.
+
+`nerves_time` requires Busybox's `ntpd` and `date` applets to be
 enabled. If you haven't explicitly disabled them, they're probably enabled.
 
 ## Configuration
