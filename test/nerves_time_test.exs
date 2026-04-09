@@ -147,6 +147,39 @@ defmodule NervesTimeTest do
     Application.delete_env(:nerves_time, :servers)
   end
 
+  test "resynchronizes after unsync report" do
+    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    assert NervesTime.synchronized?()
+
+    # Send an "unsync" report directly to the running GenServer's socket
+    ntpd_script_path = Application.app_dir(:nerves_time, ["priv", "ntpd_script"])
+    socket_path = Path.join(System.tmp_dir!(), "nerves_time_comm")
+
+    log =
+      capture_log(fn ->
+        System.cmd(ntpd_script_path, ["unsync"],
+          env: [
+            {"freq_drift_ppm", "0"},
+            {"offset", "0.0"},
+            {"stratum", "16"},
+            {"poll_interval", "1"},
+            {"SOCKET_PATH", socket_path}
+          ]
+        )
+      end)
+
+    assert log =~ "ntpd reports that it is unsynchronized; restarting"
+
+    # Wait for ntpd to restart
+    Process.sleep(500)
+
+    # We should be able to sync now
+    assert NervesTime.synchronized?()
+  end
+
   test "changing servers at runtime resets synchronization" do
     Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
     Application.start(:nerves_time)
