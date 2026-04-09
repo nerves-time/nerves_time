@@ -5,7 +5,7 @@
 * Fixes
   * Fix an issue causing NervesTime to be unsynchronized forever. See
     [#212](https://github.com/nerves-time/nerves_time/issues/212). Thanks to
-    @taun-fellows and @drteeth for the investigation and fix.
+    @taun-fellowes and @drteeth for the investigation and fix.
 
 ## v0.4.9
 
