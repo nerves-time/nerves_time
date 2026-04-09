@@ -258,6 +258,7 @@ defmodule NervesTime.Ntpd do
     new_state =
       state
       |> stop_ntpd()
+      |> prep_ntpd_start()
       |> schedule_ntpd_start()
 
     {:noreply, new_state}
