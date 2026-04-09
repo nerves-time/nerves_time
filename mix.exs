@@ -1,7 +1,7 @@
 defmodule NervesTime.MixProject do
   use Mix.Project
 
-  @version "0.4.9"
+  @version "0.4.10"
   @description "Keep time in sync on Nerves devices"
   @source_url "https://github.com/nerves-time/nerves_time"
 
