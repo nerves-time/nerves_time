@@ -36,13 +36,15 @@ defmodule NervesTime.Ntpd do
             servers: [String.t()],
             daemon: nil | pid(),
             synchronized?: boolean(),
-            clean_start?: boolean()
+            clean_start?: boolean(),
+            subscribers: %{optional(pid()) => reference()}
           }
     defstruct socket: nil,
               servers: [],
               daemon: nil,
               synchronized?: false,
-              clean_start?: true
+              clean_start?: true,
+              subscribers: %{}
   end
 
   @spec start_link(any()) :: GenServer.on_start()
@@ -94,6 +96,22 @@ defmodule NervesTime.Ntpd do
     GenServer.call(__MODULE__, :restart_ntpd)
   end
 
+  @doc """
+  Subscribe a process to NTP daemon events.
+  """
+  @spec subscribe(pid()) :: :ok
+  def subscribe(pid \\ self()) when is_pid(pid) do
+    GenServer.call(__MODULE__, {:subscribe, pid})
+  end
+
+  @doc """
+  Unsubscribe a process from NTP daemon events.
+  """
+  @spec unsubscribe(pid()) :: :ok
+  def unsubscribe(pid \\ self()) when is_pid(pid) do
+    GenServer.call(__MODULE__, {:unsubscribe, pid})
+  end
+
   @impl GenServer
   def init(_args) do
     app_env = Application.get_all_env(:nerves_time)
@@ -140,6 +158,16 @@ defmodule NervesTime.Ntpd do
   end
 
   @impl GenServer
+  def handle_call({:subscribe, pid}, _from, state) do
+    {:reply, :ok, subscribe_pid(state, pid)}
+  end
+
+  @impl GenServer
+  def handle_call({:unsubscribe, pid}, _from, state) do
+    {:reply, :ok, unsubscribe_pid(state, pid)}
+  end
+
+  @impl GenServer
   def handle_info(:start_ntpd, %State{daemon: nil, servers: servers} = state)
       when servers != [] do
     new_state = start_ntpd(state)
@@ -168,6 +196,16 @@ defmodule NervesTime.Ntpd do
     # Log abnormal exits to aide debugging.
     Logger.info("[NervesTime] unexpected ntpd :EXIT #{inspect(from)}/#{inspect(reason)}")
     {:stop, reason, state}
+  end
+
+  def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
+    new_state =
+      case Map.fetch(state.subscribers, pid) do
+        {:ok, ^ref} -> %{state | subscribers: Map.delete(state.subscribers, pid)}
+        _ -> state
+      end
+
+    {:noreply, new_state}
   end
 
   defp prep_ntpd_start(%State{servers: []} = state) do
@@ -236,20 +274,36 @@ defmodule NervesTime.Ntpd do
     %{state | daemon: nil, socket: nil, synchronized?: false}
   end
 
-  defp handle_ntpd_report({"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
+  defp handle_ntpd_report(
+         {"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval} = report,
+         state
+       ) do
+    notify_subscribers(state, :sync_aquired, report_payload(report))
     {:noreply, %{state | synchronized?: maybe_update_rtc(stratum)}}
   end
 
-  defp handle_ntpd_report({"periodic", _freq_drift_ppm, _offset, stratum, _poll_interval}, state) do
+  defp handle_ntpd_report(
+         {"periodic", _freq_drift_ppm, _offset, stratum, _poll_interval} = report,
+         state
+       ) do
+    notify_subscribers(state, :sync_updated, report_payload(report))
     {:noreply, %{state | synchronized?: maybe_update_rtc(stratum)}}
   end
 
-  defp handle_ntpd_report({"step", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
+  defp handle_ntpd_report(
+         {"step", _freq_drift_ppm, _offset, _stratum, _poll_interval} = report,
+         state
+       ) do
+    notify_subscribers(state, :clock_step, report_payload(report))
     # Ignore
     {:noreply, state}
   end
 
-  defp handle_ntpd_report({"unsync", _freq_drift_ppm, _offset, _stratum, _poll_interval}, state) do
+  defp handle_ntpd_report(
+         {"unsync", _freq_drift_ppm, _offset, _stratum, _poll_interval} = report,
+         state
+       ) do
+    notify_subscribers(state, :sync_lost, report_payload(report))
     Logger.error("[NervesTime] ntpd reports that it is unsynchronized; restarting")
 
     # According to the Busybox ntpd docs, if you get an `unsync` notification, then
@@ -304,5 +358,41 @@ defmodule NervesTime.Ntpd do
 
   defp socket_path() do
     Path.join(System.tmp_dir!(), "nerves_time_comm")
+  end
+
+  defp subscribe_pid(%State{subscribers: subscribers} = state, pid) do
+    case Map.has_key?(subscribers, pid) do
+      true ->
+        state
+
+      false ->
+        %{state | subscribers: Map.put(subscribers, pid, Process.monitor(pid))}
+    end
+  end
+
+  defp unsubscribe_pid(%State{subscribers: subscribers} = state, pid) do
+    case Map.pop(subscribers, pid) do
+      {nil, _} ->
+        state
+
+      {ref, subscribers} ->
+        Process.demonitor(ref, [:flush])
+        %{state | subscribers: subscribers}
+    end
+  end
+
+  defp notify_subscribers(%State{subscribers: subscribers}, event, report) do
+    Enum.each(Map.keys(subscribers), fn pid ->
+      send(pid, {:nerves_time, event, report})
+    end)
+  end
+
+  defp report_payload({_report, freq_drift_ppm, offset, stratum, poll_interval}) do
+    %{
+      freq_drift_ppm: freq_drift_ppm,
+      offset: offset,
+      stratum: stratum,
+      poll_interval: poll_interval
+    }
   end
 end

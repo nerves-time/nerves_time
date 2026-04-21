@@ -33,6 +33,21 @@ defmodule NervesTime do
     Defaults to `0`.
   """
 
+  @typedoc """
+  NTP daemon event names emitted to subscribers.
+  """
+  @type ntpd_event() :: :sync_aquired | :sync_updated | :sync_lost | :clock_step
+
+  @typedoc """
+  Metadata reported by the NTP helper script for a synchronization event.
+  """
+  @type ntpd_event_report() :: %{
+          freq_drift_ppm: integer(),
+          offset: float(),
+          stratum: integer(),
+          poll_interval: integer()
+        }
+
   @doc """
   Set the system time
   """
@@ -98,4 +113,27 @@ defmodule NervesTime do
   """
   @spec restart_ntpd() :: :ok | {:error, term()}
   defdelegate restart_ntpd(), to: NervesTime.Ntpd
+
+  @doc """
+  Subscribe a process to NTP daemon events.
+
+  Subscribers receive messages in the form:
+
+      {:nerves_time, event, report}
+
+  Where `event` is one of:
+
+    * `:sync_aquired`
+    * `:sync_updated`
+    * `:sync_lost`
+    * `:clock_step`
+  """
+  @spec subscribe(pid()) :: :ok
+  defdelegate subscribe(pid \\ self()), to: NervesTime.Ntpd
+
+  @doc """
+  Unsubscribe a process from NTP daemon events.
+  """
+  @spec unsubscribe(pid()) :: :ok
+  defdelegate unsubscribe(pid \\ self()), to: NervesTime.Ntpd
 end
