@@ -37,6 +37,9 @@ defmodule NervesTime.Ntpd do
             daemon: nil | pid(),
             synchronized?: boolean(),
             clean_start?: boolean(),
+            last_sync_report: map() | nil,
+            sync_acquired_at: DateTime.t() | nil,
+            last_sync_at: DateTime.t() | nil,
             subscribers: %{optional(pid()) => reference()}
           }
     defstruct socket: nil,
@@ -44,6 +47,9 @@ defmodule NervesTime.Ntpd do
               daemon: nil,
               synchronized?: false,
               clean_start?: true,
+              last_sync_report: nil,
+              sync_acquired_at: nil,
+              last_sync_at: nil,
               subscribers: %{}
   end
 
@@ -58,6 +64,14 @@ defmodule NervesTime.Ntpd do
   @spec synchronized?() :: boolean()
   def synchronized?() do
     GenServer.call(__MODULE__, :synchronized?)
+  end
+
+  @doc """
+  Return the current NTP synchronization status.
+  """
+  @spec sync_status() :: NervesTime.sync_status()
+  def sync_status() do
+    GenServer.call(__MODULE__, :sync_status)
   end
 
   @doc """
@@ -136,6 +150,17 @@ defmodule NervesTime.Ntpd do
   end
 
   @impl GenServer
+  def handle_call(:sync_status, _from, state) do
+    {:reply,
+     %{
+       synchronized?: state.synchronized?,
+       last_sync_report: state.last_sync_report,
+       sync_acquired_at: state.sync_acquired_at,
+       last_sync_at: state.last_sync_at
+     }, state}
+  end
+
+  @impl GenServer
   def handle_call(:clean_start?, _from, state) do
     {:reply, state.clean_start?, state}
   end
@@ -159,7 +184,20 @@ defmodule NervesTime.Ntpd do
 
   @impl GenServer
   def handle_call({:subscribe, pid}, _from, state) do
-    {:reply, :ok, subscribe_pid(state, pid)}
+    new_state = subscribe_pid(state, pid)
+
+    send(
+      pid,
+      {:nerves_time, :sync_status,
+       %{
+         synchronized?: new_state.synchronized?,
+         last_sync_report: new_state.last_sync_report,
+         sync_acquired_at: new_state.sync_acquired_at,
+         last_sync_at: new_state.last_sync_at
+       }}
+    )
+
+    {:reply, :ok, new_state}
   end
 
   @impl GenServer
@@ -278,8 +316,8 @@ defmodule NervesTime.Ntpd do
          {"stratum", _freq_drift_ppm, _offset, stratum, _poll_interval} = report,
          state
        ) do
-    notify_subscribers(state, :sync_aquired, report_payload(report))
-    {:noreply, %{state | synchronized?: maybe_update_rtc(stratum)}}
+    notify_subscribers(state, :sync_acquired, report_payload(report))
+    {:noreply, update_sync_state(state, report, stratum)}
   end
 
   defp handle_ntpd_report(
@@ -287,7 +325,7 @@ defmodule NervesTime.Ntpd do
          state
        ) do
     notify_subscribers(state, :sync_updated, report_payload(report))
-    {:noreply, %{state | synchronized?: maybe_update_rtc(stratum)}}
+    {:noreply, update_sync_state(state, report, stratum)}
   end
 
   defp handle_ntpd_report(
@@ -394,5 +432,25 @@ defmodule NervesTime.Ntpd do
       stratum: stratum,
       poll_interval: poll_interval
     }
+  end
+
+  defp update_sync_state(state, report, stratum) do
+    synchronized? = maybe_update_rtc(stratum)
+
+    case synchronized? do
+      true ->
+        now = DateTime.utc_now()
+
+        %{
+          state
+          | synchronized?: true,
+            last_sync_report: report_payload(report),
+            sync_acquired_at: state.sync_acquired_at || now,
+            last_sync_at: now
+        }
+
+      false ->
+        %{state | synchronized?: false}
+    end
   end
 end

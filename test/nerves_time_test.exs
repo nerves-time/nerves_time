@@ -51,6 +51,13 @@ defmodule NervesTimeTest do
 
     # The fake_busybox_ntpd should have reported synchronization by this time.
     assert NervesTime.synchronized?()
+
+    assert %{
+             synchronized?: true,
+             last_sync_report: %{stratum: 3},
+             sync_acquired_at: %DateTime{},
+             last_sync_at: %DateTime{}
+           } = NervesTime.sync_status()
   end
 
   test "reports that time not synchronized when net is down" do
@@ -59,6 +66,14 @@ defmodule NervesTimeTest do
     Process.sleep(100)
 
     refute NervesTime.synchronized?()
+
+    assert %{
+             synchronized?: false,
+             last_sync_report: nil,
+             sync_acquired_at: nil,
+             last_sync_at: nil
+           } =
+             NervesTime.sync_status()
   end
 
   test "reports that time not synchronized when stratum 16" do
@@ -233,6 +248,15 @@ defmodule NervesTimeTest do
     Application.start(:nerves_time)
     NervesTime.subscribe()
 
+    assert_receive {:nerves_time, :sync_status,
+                    %{
+                      synchronized?: false,
+                      last_sync_report: nil,
+                      sync_acquired_at: nil,
+                      last_sync_at: nil
+                    }},
+                   200
+
     send_ntpd_report("stratum",
       stratum: "3",
       offset: "0.125",
@@ -240,15 +264,30 @@ defmodule NervesTimeTest do
       freq_drift_ppm: "2"
     )
 
-    assert_receive {:nerves_time, :sync_aquired,
+    assert_receive {:nerves_time, :sync_acquired,
                     %{freq_drift_ppm: 2, offset: 0.125, stratum: 3, poll_interval: 4}},
                    200
+
+    assert %{sync_acquired_at: sync_acquired_at, last_sync_at: first_last_sync_at} =
+             NervesTime.sync_status()
+
+    assert %DateTime{} = sync_acquired_at
+    assert %DateTime{} = first_last_sync_at
 
     send_ntpd_report("periodic", stratum: "2", offset: "0.25")
 
     assert_receive {:nerves_time, :sync_updated,
                     %{freq_drift_ppm: 0, offset: 0.25, stratum: 2, poll_interval: 1}},
                    200
+
+    assert %{
+             synchronized?: true,
+             last_sync_report: %{stratum: 2},
+             sync_acquired_at: ^sync_acquired_at,
+             last_sync_at: second_last_sync_at
+           } = NervesTime.sync_status()
+
+    assert DateTime.compare(second_last_sync_at, first_last_sync_at) in [:eq, :gt]
 
     send_ntpd_report("step", stratum: "2", offset: "1.5")
 
@@ -261,6 +300,15 @@ defmodule NervesTimeTest do
     Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd_net_down"))
     Application.start(:nerves_time)
     NervesTime.subscribe()
+
+    assert_receive {:nerves_time, :sync_status,
+                    %{
+                      synchronized?: false,
+                      last_sync_report: nil,
+                      sync_acquired_at: nil,
+                      last_sync_at: nil
+                    }},
+                   200
 
     log =
       capture_log(fn ->
@@ -276,15 +324,71 @@ defmodule NervesTimeTest do
     assert log =~ "ntpd reports that it is unsynchronized; restarting"
   end
 
+  test "sync status preserves last successful sync details after sync is lost" do
+    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    assert %{
+             synchronized?: true,
+             last_sync_report: initial_report,
+             sync_acquired_at: sync_acquired_at,
+             last_sync_at: last_sync_at
+           } = NervesTime.sync_status()
+
+    assert %DateTime{} = sync_acquired_at
+    assert %DateTime{} = last_sync_at
+    assert %{stratum: 3} = initial_report
+
+    ntpd_script_path = Application.app_dir(:nerves_time, ["priv", "ntpd_script"])
+    socket_path = Path.join(System.tmp_dir!(), "nerves_time_comm")
+
+    capture_log(fn ->
+      System.cmd(ntpd_script_path, ["unsync"],
+        env: [
+          {"freq_drift_ppm", "0"},
+          {"offset", "0.0"},
+          {"stratum", "16"},
+          {"poll_interval", "1"},
+          {"SOCKET_PATH", socket_path}
+        ]
+      )
+    end)
+
+    assert %{
+             synchronized?: false,
+             last_sync_report: ^initial_report,
+             sync_acquired_at: ^sync_acquired_at,
+             last_sync_at: ^last_sync_at
+           } = NervesTime.sync_status()
+  end
+
   test "unsubscribe stops event delivery" do
     Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd_net_down"))
     Application.start(:nerves_time)
     NervesTime.subscribe()
+    assert_receive {:nerves_time, :sync_status, _}, 200
     NervesTime.unsubscribe()
 
     send_ntpd_report("step")
 
     refute_receive {:nerves_time, :clock_step, _}, 200
+  end
+
+  test "subscribe sends the current sync status snapshot" do
+    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
+    Application.start(:nerves_time)
+    Process.sleep(100)
+    NervesTime.subscribe()
+
+    assert_receive {:nerves_time, :sync_status,
+                    %{
+                      synchronized?: true,
+                      last_sync_report: %{stratum: 3},
+                      sync_acquired_at: %DateTime{},
+                      last_sync_at: %DateTime{}
+                    }},
+                   200
   end
 
   test "subscriber processes are removed when they exit" do
