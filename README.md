@@ -106,6 +106,53 @@ Here's the basic idea behind `nerves_time`:
   downs. This is currently only done at around 11 minute intervals.
 
 To check the NTP synchronization status, call `NervesTime.synchronized?/0`.
+To get the current sync snapshot, call `NervesTime.sync_status/0`.
+
+## Subscriptions
+
+Processes can subscribe to NTP daemon updates:
+
+```elixir
+NervesTime.subscribe()
+```
+
+Subscribers receive messages in the form:
+
+```elixir
+{:nerves_time, event, payload}
+```
+
+Live events:
+
+* `:sync_acquired`
+* `:sync_updated`
+* `:sync_lost`
+* `:clock_step`
+
+When subscribing, `nerves_time` immediately sends a sync status snapshot:
+
+```elixir
+{:nerves_time, :sync_status,
+ %{
+   synchronized?: boolean(),
+   last_sync_report: %{
+     freq_drift_ppm: integer(),
+     offset: float(),
+     stratum: integer(),
+     poll_interval: integer()
+   } | nil,
+   sync_acquired_at: DateTime.t() | nil,
+   last_sync_at: DateTime.t() | nil
+ }}
+```
+
+The snapshot is scoped to the current `nerves_time` runtime. After an
+application restart or device reboot, sync history is reset until `ntpd`
+reports synchronization again.
+
+`sync_acquired_at` is when synchronization was first confirmed in the current
+runtime. `last_sync_at` is the most recent successful sync update in the
+current runtime.
 
 ## Real Time Clock
 
