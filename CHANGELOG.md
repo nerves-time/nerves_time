@@ -4,6 +4,12 @@
 -->
 # Changelog
 
+## v0.4.11
+
+* New feature
+  * Add NTP event notifications so users can react to changes in the time
+    synchronization status. Thanks to @elielgordondensity.
+
 ## v0.4.10
 
 * Fixes
@@ -47,6 +53,7 @@
 
 * Updates
   * Allow `muontrap v1.0.0` to be used.
+t
 
 ## v0.4.3
 
