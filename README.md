@@ -1,3 +1,8 @@
+<!--
+  SPDX-FileCopyrightText: Frank Hunleth
+  SPDX-License-Identifier: CC-BY-4.0
+-->
+
 # nerves_time
 
 [![Hex version](https://img.shields.io/hexpm/v/nerves_time.svg "Hex version")](https://hex.pm/packages/nerves_time)
