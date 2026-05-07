@@ -33,6 +33,31 @@ defmodule NervesTime do
     Defaults to `0`.
   """
 
+  @typedoc """
+  NTP daemon event names emitted to subscribers.
+  """
+  @type ntpd_event() :: :sync_status | :sync_acquired | :sync_updated | :sync_lost | :clock_step
+
+  @typedoc """
+  Metadata reported by the NTP helper script for a synchronization event.
+  """
+  @type ntpd_event_report() :: %{
+          freq_drift_ppm: integer(),
+          offset: float(),
+          stratum: integer(),
+          poll_interval: integer()
+        }
+
+  @typedoc """
+  Current NTP synchronization state.
+  """
+  @type sync_status() :: %{
+          synchronized?: boolean(),
+          last_sync_report: ntpd_event_report() | nil,
+          sync_acquired_at: DateTime.t() | nil,
+          last_sync_at: DateTime.t() | nil
+        }
+
   @doc """
   Set the system time
   """
@@ -52,6 +77,12 @@ defmodule NervesTime do
   """
   @spec synchronized?() :: boolean()
   defdelegate synchronized?, to: NervesTime.Ntpd
+
+  @doc """
+  Return the current NTP synchronization status.
+  """
+  @spec sync_status() :: sync_status()
+  defdelegate sync_status(), to: NervesTime.Ntpd
 
   @doc """
   Set the list of NTP servers
@@ -98,4 +129,31 @@ defmodule NervesTime do
   """
   @spec restart_ntpd() :: :ok | {:error, term()}
   defdelegate restart_ntpd(), to: NervesTime.Ntpd
+
+  @doc """
+  Subscribe a process to NTP daemon events.
+
+  Subscribers receive messages in the form:
+
+      {:nerves_time, event, report}
+
+  Where `event` is one of:
+
+    * `:sync_status`
+    * `:sync_acquired`
+    * `:sync_updated`
+    * `:sync_lost`
+    * `:clock_step`
+
+  `:sync_status` is sent immediately when subscribing so new subscribers can
+  observe the current synchronization state without replaying old events.
+  """
+  @spec subscribe(pid()) :: :ok
+  defdelegate subscribe(pid \\ self()), to: NervesTime.Ntpd
+
+  @doc """
+  Unsubscribe a process from NTP daemon events.
+  """
+  @spec unsubscribe(pid()) :: :ok
+  defdelegate unsubscribe(pid \\ self()), to: NervesTime.Ntpd
 end
