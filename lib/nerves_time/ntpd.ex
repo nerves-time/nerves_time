@@ -22,12 +22,6 @@ defmodule NervesTime.Ntpd do
   @ntpd_clean_start_delay 10
 
   @default_ntpd_path "/usr/sbin/ntpd"
-  @default_ntp_servers [
-    "0.pool.ntp.org",
-    "1.pool.ntp.org",
-    "2.pool.ntp.org",
-    "3.pool.ntp.org"
-  ]
 
   defmodule State do
     @moduledoc false
@@ -88,8 +82,11 @@ defmodule NervesTime.Ntpd do
 
   @doc """
   Update the list of NTP servers to poll
+
+  When a `:servers_file` is configured, the list is also persisted so that it
+  survives a reboot. Returns `{:error, reason}` if persistence fails.
   """
-  @spec set_ntp_servers([String.t()]) :: :ok
+  @spec set_ntp_servers([String.t()]) :: :ok | {:error, term()}
   def set_ntp_servers(servers) when is_list(servers) do
     GenServer.call(__MODULE__, {:set_ntp_servers, servers})
   end
@@ -128,10 +125,7 @@ defmodule NervesTime.Ntpd do
 
   @impl GenServer
   def init(_args) do
-    app_env = Application.get_all_env(:nerves_time)
-    ntp_servers = Keyword.get(app_env, :servers, @default_ntp_servers)
-
-    {:ok, %State{servers: ntp_servers}, {:continue, :continue}}
+    {:ok, %State{servers: NervesTime.ServerConfig.get()}, {:continue, :continue}}
   end
 
   @impl GenServer
@@ -167,9 +161,12 @@ defmodule NervesTime.Ntpd do
 
   @impl GenServer
   def handle_call({:set_ntp_servers, servers}, _from, state) do
+    # Persist before restarting so that a write failure is surfaced to the
+    # caller. The running configuration is still updated either way.
+    reply = NervesTime.ServerConfig.put(servers)
     new_state = %{state | servers: servers} |> cleanup_and_restart()
 
-    {:reply, :ok, new_state}
+    {:reply, reply, new_state}
   end
 
   @impl GenServer
