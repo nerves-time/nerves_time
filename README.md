@@ -6,7 +6,7 @@
 # nerves_time
 
 [![Hex version](https://img.shields.io/hexpm/v/nerves_time.svg "Hex version")](https://hex.pm/packages/nerves_time)
-[![API docs](https://img.shields.io/hexpm/v/nerves_time.svg?label=hexdocs "API docs")](https://hexdocs.pm/nerves_time/NervesTime.html)
+[![API docs](https://img.shields.io/hexpm/v/nerves_time.svg?label=hexdocs "API docs")](https://nerves-time.hexdocs.pm/NervesTime.html)
 [![CircleCI](https://dl.circleci.com/status-badge/img/gh/nerves-time/nerves_time/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/nerves-time/nerves_time/tree/main)
 [![REUSE status](https://api.reuse.software/badge/github.com/nerves-time/nerves_time)](https://api.reuse.software/info/github.com/nerves-time/nerves_time)
 
