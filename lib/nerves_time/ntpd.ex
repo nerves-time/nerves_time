@@ -206,8 +206,7 @@ defmodule NervesTime.Ntpd do
   end
 
   @impl GenServer
-  def handle_info(:start_ntpd, %State{daemon: nil, servers: servers} = state)
-      when servers != [] do
+  def handle_info(:start_ntpd, %State{daemon: nil} = state) do
     new_state = start_ntpd(state)
     {:noreply, new_state}
   end
