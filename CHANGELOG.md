@@ -4,6 +4,11 @@
 -->
 # Changelog
 
+## v0.4.12
+
+* Fixes
+  * Fix compilation warnings with Elixir 1.20
+
 ## v0.4.11
 
 * New feature
