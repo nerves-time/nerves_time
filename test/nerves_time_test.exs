@@ -12,6 +12,16 @@ defmodule NervesTimeTest do
     Path.join(@fixtures, fixture)
   end
 
+  defp servers_file_path() do
+    Path.join([System.tmp_dir!(), "nerves_time_test_servers", "ntp_servers"])
+  end
+
+  defp cleanup_servers_file() do
+    Application.delete_env(:nerves_time, :servers_file)
+    Application.delete_env(:nerves_time, :servers)
+    File.rm_rf!(Path.dirname(servers_file_path()))
+  end
+
   defp send_ntpd_report(report, env \\ []) do
     ntpd_script_path = Application.app_dir(:nerves_time, ["priv", "ntpd_script"])
     socket_path = Path.join(System.tmp_dir!(), "nerves_time_comm")
@@ -40,6 +50,10 @@ defmodule NervesTimeTest do
       socket_path = Path.join(System.tmp_dir!(), "nerves_time_comm")
       File.rm(socket_path)
     end)
+
+    # Ensure a leaked servers_file config from a prior test doesn't bleed into
+    # the next one.
+    Application.delete_env(:nerves_time, :servers_file)
 
     :ok
   end
@@ -188,6 +202,81 @@ defmodule NervesTimeTest do
 
     # Use the defaults for servers for the other tests.
     Application.delete_env(:nerves_time, :servers)
+  end
+
+  test "loads persisted servers file at startup, taking precedence over :servers" do
+    file = servers_file_path()
+    File.mkdir_p!(Path.dirname(file))
+    File.write!(file, "1.2.3.4\n")
+
+    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
+    Application.put_env(:nerves_time, :servers, ["should.be.ignored"])
+    Application.put_env(:nerves_time, :servers_file, file)
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    assert NervesTime.ntp_servers() == ["1.2.3.4"]
+
+    cleanup_servers_file()
+  end
+
+  test "falls back to :servers when no persisted file exists" do
+    file = servers_file_path()
+
+    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
+    Application.put_env(:nerves_time, :servers, ["fallback.example.com"])
+    Application.put_env(:nerves_time, :servers_file, file)
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    assert NervesTime.ntp_servers() == ["fallback.example.com"]
+
+    cleanup_servers_file()
+  end
+
+  test "set_ntp_servers persists to the servers file and survives a restart" do
+    file = servers_file_path()
+
+    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
+    Application.put_env(:nerves_time, :servers, [])
+    Application.put_env(:nerves_time, :servers_file, file)
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    assert :ok = NervesTime.set_ntp_servers(["1.2.3.4"])
+    assert File.read!(file) =~ "1.2.3.4"
+
+    # Restart the application and confirm the persisted list is reloaded.
+    capture_log(fn -> Application.stop(:nerves_time) end)
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    assert NervesTime.ntp_servers() == ["1.2.3.4"]
+
+    cleanup_servers_file()
+  end
+
+  test "persisting an empty list disables NTP across a restart" do
+    file = servers_file_path()
+
+    Application.put_env(:nerves_time, :ntpd, fixture_path("fake_busybox_ntpd"))
+    Application.put_env(:nerves_time, :servers, ["0.pool.ntp.org"])
+    Application.put_env(:nerves_time, :servers_file, file)
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    assert :ok = NervesTime.set_ntp_servers([])
+    assert File.exists?(file)
+
+    # On restart the present-but-empty file beats the non-empty :servers config.
+    capture_log(fn -> Application.stop(:nerves_time) end)
+    Application.start(:nerves_time)
+    Process.sleep(100)
+
+    assert NervesTime.ntp_servers() == []
+    refute NervesTime.synchronized?()
+
+    cleanup_servers_file()
   end
 
   test "resynchronizes after unsync report" do
