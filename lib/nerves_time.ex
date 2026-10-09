@@ -21,6 +21,13 @@ defmodule NervesTime do
 
   * `:servers` - a list of NTP servers for time synchronization. Specifying an
     empty list turns off NTP
+  * `:servers_file` - an optional file path for durably persisting the runtime
+    NTP server list. When set, `set_ntp_servers/1` writes to this file and the
+    list is reloaded on the next boot, taking precedence over `:servers`. This
+    is useful for devices that receive their NTP servers dynamically (e.g. from
+    provisioning or DHCP). An empty list is persisted as "NTP disabled" so that
+    choice also survives a reboot. When the file is absent, `NervesTime` falls
+    back to `:servers`.
   * `:time_file` - a file path for tracking the time. It allows the system to
     start with a reasonable time quickly on boot and before the Internet is
     available for NTP to work.
@@ -107,8 +114,19 @@ defmodule NervesTime do
   ```elixir
   config :nerves_time, :servers, []
   ```
+
+  To persist runtime changes across reboots, configure `:servers_file`. When
+  set, the list passed here is written to that file and reloaded on the next
+  boot, taking precedence over `:servers`:
+
+  ```elixir
+  config :nerves_time, :servers_file, "/data/nerves_time/ntp_servers"
+  ```
+
+  Returns `{:error, reason}` if persisting to `:servers_file` fails. The running
+  configuration is updated regardless.
   """
-  @spec set_ntp_servers([String.t()]) :: :ok
+  @spec set_ntp_servers([String.t()]) :: :ok | {:error, term()}
   defdelegate set_ntp_servers(servers), to: NervesTime.Ntpd
 
   @doc """

@@ -81,6 +81,18 @@ config :nerves_time, :servers, [
 It's also possible to configure NTP servers at runtime. See
 `NervesTime.set_ntp_servers/1`.
 
+By default, servers set at runtime only live in memory and are lost on reboot.
+To persist them, configure a `:servers_file`. When set, `set_ntp_servers/1`
+writes the list to that file and it's reloaded on the next boot, taking
+precedence over `:servers`. An empty list is persisted as "NTP disabled" so
+that choice survives a reboot too.
+
+```elixir
+# config/config.exs
+
+config :nerves_time, :servers_file, "/data/nerves_time/ntp_servers"
+```
+
 ### Valid time range
 
 `nerves_time` has a concept of a valid time range. This minimizes time
