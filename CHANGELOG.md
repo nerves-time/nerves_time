@@ -4,6 +4,12 @@
 -->
 # Changelog
 
+## v0.4.13
+
+* Changes
+  * Allow MuonTrap 2 to be used
+  * Fix rare parallel make compilation error
+
 ## v0.4.12
 
 * Fixes
