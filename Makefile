@@ -46,6 +46,9 @@ install: $(PREFIX) $(BUILD) $(NTPD_SCRIPT)
 
 $(OBJ): Makefile
 
+$(OBJ): | $(BUILD)
+$(NTPD_SCRIPT): | $(PREFIX)
+
 $(BUILD)/%.o: src/%.c
 	@echo " CC $(notdir $@)"
 	$(CC) -c $(ERL_CFLAGS) $(CFLAGS) -o $@ $<
