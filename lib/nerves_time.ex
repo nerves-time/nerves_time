@@ -3,6 +3,7 @@
 # SPDX-FileCopyrightText: 2020 Connor Rigby
 # SPDX-FileCopyrightText: 2020 Eric Rauer
 # SPDX-FileCopyrightText: 2022 Benjamin Milde
+# SPDX-FileCopyrightText: 2026 Eliel A. Gordon
 #
 # SPDX-License-Identifier: Apache-2.0
 #

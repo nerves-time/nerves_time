@@ -1,5 +1,11 @@
 <!--
-  SPDX-FileCopyrightText: Frank Hunleth
+  SPDX-FileCopyrightText: 2016 Marcin Operacz
+  SPDX-FileCopyrightText: 2018 Frank Hunleth
+  SPDX-FileCopyrightText: 2020 Connor Rigby
+  SPDX-FileCopyrightText: 2022 Benjamin Milde
+  SPDX-FileCopyrightText: 2024 Josh Kalderimis
+  SPDX-FileCopyrightText: 2026 Eliel A. Gordon
+  SPDX-FileCopyrightText: 2026 Lars Wikman
   SPDX-License-Identifier: CC-BY-4.0
 -->
 

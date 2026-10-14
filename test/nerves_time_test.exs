@@ -1,4 +1,6 @@
 # SPDX-FileCopyrightText: 2018 Frank Hunleth
+# SPDX-FileCopyrightText: 2026 Benjamin Moss
+# SPDX-FileCopyrightText: 2026 Eliel A. Gordon
 #
 # SPDX-License-Identifier: Apache-2.0
 #
