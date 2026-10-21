@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2020 Eric Rauer
 # SPDX-FileCopyrightText: 2022 Benjamin Milde
 # SPDX-FileCopyrightText: 2024 Frank Hunleth
+# SPDX-FileCopyrightText: 2026 Bryan Leong
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -160,18 +161,25 @@ defmodule NervesTime.SystemTime do
   defp set_system_time_from_rtc(%State{rtc: rtc} = state) when not is_nil(rtc) do
     final_rtc_state =
       case rtc.get_time(state.rtc_state) do
-        {:ok, %NaiveDateTime{} = rtc_time, next_rtc_state} ->
-          Logger.info(
-            "[NervesTime] #{inspect(rtc)} reports that the time is #{inspect(rtc_time)}"
-          )
+        {:ok, rtc_time, next_rtc_state} ->
+          if valid_time?(rtc_time) do
+            Logger.info(
+              "[NervesTime] #{inspect(rtc)} reports that the time is #{inspect(rtc_time)}"
+            )
 
-          check_rtc_time_and_set(rtc, rtc_time, next_rtc_state)
+            check_rtc_time_and_set(rtc, rtc_time, next_rtc_state)
+          else
+            Logger.warning(
+              "[NervesTime] #{inspect(rtc)} reported an invalid time: #{inspect(rtc_time, structs: false)}"
+            )
+
+            set_rtc_from_system_time(rtc, next_rtc_state)
+          end
 
         # Try to fix an unset or corrupt RTC
         {:unset, next_rtc_state} ->
           Logger.info("[NervesTime] #{inspect(rtc)} reports that the time hasn't been set.")
-          now = sane_system_time()
-          rtc.set_time(next_rtc_state, now)
+          set_rtc_from_system_time(rtc, next_rtc_state)
       end
 
     %{state | rtc_state: final_rtc_state}
@@ -185,6 +193,18 @@ defmodule NervesTime.SystemTime do
 
     state
   end
+
+  defp set_rtc_from_system_time(rtc, rtc_state) do
+    now = sane_system_time()
+    rtc.set_time(rtc_state, now)
+  end
+
+  defp valid_time?(%NaiveDateTime{calendar: Calendar.ISO} = time) do
+    Calendar.ISO.valid_date?(time.year, time.month, time.day) and
+      Calendar.ISO.valid_time?(time.hour, time.minute, time.second, time.microsecond)
+  end
+
+  defp valid_time?(_other), do: false
 
   defp sane_system_time() do
     now = NaiveDateTime.utc_now()
