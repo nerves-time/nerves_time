@@ -4,6 +4,11 @@
 -->
 # Changelog
 
+## v0.4.14
+
+* Fixes
+  * Handle invalid times returned from RTC implementations. (@BryanLeong)
+
 ## v0.4.13
 
 * Changes
